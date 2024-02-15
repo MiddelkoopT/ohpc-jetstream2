@@ -1,0 +1,32 @@
+WW_INTERNAL: 43
+ipaddr: 10.5.0.8
+netmask: 255.255.0.0
+network: 10.5.0.0
+warewulf:
+  port: 9873
+  secure: false
+  update interval: 60
+  autobuild overlays: true
+  host overlay: true
+  syslog: false
+dhcp:
+  enabled: true
+  template: static
+  range start: 10.5.1.0
+  range end: 10.5.254.254
+  systemd name: dhcpd
+tftp:
+  enabled: true
+  systemd name: tftp
+nfs:
+  enabled: true
+  export paths:
+  - path: /home
+    export options: rw,sync
+    mount options: defaults
+    mount: true
+  - path: /opt
+    export options: ro,sync,no_root_squash
+    mount options: defaults
+    mount: false
+  systemd name: nfs-server

@@ -1,0 +1,166 @@
+- name: Configure OHPC head node
+  hosts: head
+  become: true
+  tasks:
+    - name: Change hostname
+      ansible.builtin.hostname:
+        name: head
+        use: systemd
+
+    - name: Configure internal interface
+      ansible.builtin.template:
+        owner: root
+        group: root
+        mode: "644"
+        src: templates/ifcfg-eth1.j2
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+      register: networkmanager_eth1
+
+    - name: Reload NetworkManager
+      # noqa: no-handler
+      ansible.builtin.systemd_service:
+        name: NetworkManager.service
+        enabled: true
+        state: restarted
+      when: networkmanager_eth1.changed
+
+    - name: Stop and disable firewall
+      # noqa: no-handler
+      ansible.builtin.systemd_service:
+        name: firewalld.service
+        enabled: false
+        state: stopped
+
+    - name: Add head to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "10.5.0.8    head.localdomain head"
+
+    - name: Install OHPC release
+      ansible.builtin.yum:
+        name: http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
+        disable_gpg_check: true
+
+    - name: Install OHPC base
+      ansible.builtin.yum:
+        enablerepo: powertools
+        name:
+          - ohpc-base
+          - ohpc-slurm-client
+          - ohpc-slurm-server
+          - warewulf-ohpc
+          - hwloc-ohpc
+          - chrony
+          - jq
+          - mtools
+
+    - name: Add head localnet to chrony
+      ansible.builtin.lineinfile:
+        path: /etc/chrony.conf
+        line: "allow 10.5.0.0/16"
+      register: chrony_conf
+
+    - name: Restart chrony
+      # noqa: no-handler
+      ansible.builtin.systemd_service:
+        name: chronyd.service
+        enabled: true
+        state: restarted
+      when: chrony_conf.changed
+
+    - name: WW4 warewulf.conf
+      ansible.builtin.template:
+        src: templates/warewulf.conf.j2
+        dest: /etc/warewulf/warewulf.conf
+        mode: "600"
+
+    - name: WW4 defaults.conf
+      ansible.builtin.template:
+        src: templates/defaults.conf.j2
+        dest: /etc/warewulf/defaults.conf
+        mode: "600"
+
+    - name: Setup the head node
+      # noqa: command-instead-of-module
+      ansible.builtin.shell: |
+        sms_name=head
+
+        ## Warewulf
+        wwctl configure hostfile
+        wwctl configure ssh
+        wwctl configure nfs
+
+        ## Slurm
+        cp /etc/slurm/slurm.conf.ohpc /etc/slurm/slurm.conf
+        cp /etc/slurm/cgroup.conf.example /etc/slurm/cgroup.conf
+
+        perl -pi -e "s/SlurmctldHost=\S+/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
+        odeName=c[0-4] State=UNKNOWN
+        perl -pi -e 's/^NodeName=c\[1-4\].*$/NodeName=c[0-4] State=UNKNOWN/' /etc/slurm/slurm.conf
+        perl -pi -e 's/^PartitionName=normal Nodes=c\[1-4\]/PartitionName=normal Nodes=c[0-4]/' /etc/slurm/slurm.conf
+
+        ## Start head node services
+        systemctl enable --now warewulfd
+        systemctl enable --now munge
+        systemctl enable --now slurmctld
+
+        ## Node Image
+        wwctl container import docker://ghcr.io/hpcng/warewulf-rockylinux:9 rocky-9
+        wwctl container syncuser rocky-9 --write # get uid/gid in before install
+        wwctl overlay build
+
+        touch /root/head.stamp
+
+      args:
+        creates: /root/head.stamp
+
+- name: Setup compute nodes
+  hosts: head
+  become: true
+  tasks:
+    - name: Generate compute node image
+      ansible.builtin.shell: |
+        sms_ip=10.5.0.8
+
+        wwctl container exec rocky-9 /bin/bash <<EOF
+        export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+
+        dnf install -y dnf-plugins-core
+        dnf config-manager --set-enabled crb
+        dnf install -y epel-release
+
+        dnf upgrade -y
+        dnf install -y install kernel
+        passwd -d root # allow serial console login
+
+        dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
+
+        dnf install -y ohpc-base-compute hwloc-ohpc
+        dnf install -y ohpc-slurm-client
+        systemctl enable munge
+
+        dnf install -y chrony
+        echo "server ${sms_ip} iburst" >> /etc/chrony.conf
+
+        echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/sysconfig/slurmd
+        systemctl enable slurmd
+
+        dnf install -y lmod-ohpc
+
+        dnf clean all
+        EOF
+
+        wwctl container syncuser rocky-9 --write
+
+        wwctl overlay mkdir generic --mode 0700 /etc/munge
+        wwctl overlay import generic /etc/munge/munge.key
+        wwctl overlay chown generic /etc/munge/munge.key $(id -u munge) $(id -g munge)
+        wwctl overlay chown generic /etc/munge $(id -u munge) $(id -g munge)
+
+        useradd --create-home --shell=/bin/bash --user-group auser
+        wwctl container syncuser rocky-9 --write
+
+        touch /root/node.stamp
+
+      args:
+        creates: /root/node.stamp
