@@ -7,4 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install packages
-        run: sudo apt-get install -y openstackclient
+        run: |-
+          sudo apt install -y python3-openstackclient
+          openstack --version
