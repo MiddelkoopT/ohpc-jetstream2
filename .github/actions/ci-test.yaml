@@ -1,0 +1,10 @@
+name: ci-test
+on:
+  push:
+    branches: [ ci ]
+jobs:
+  test-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install packages
+        run: sudo apt-get install -y openstackclient
