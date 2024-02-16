@@ -33,7 +33,7 @@ hw_scsi_model=virtio-scsi
 
 ```bash
 ./ipxe.sh
-openstack image create --disk-format raw --file disk.img --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' efi-ipxe
+openstack image create --disk-format raw --file disk.img --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 efi-ipxe
 ```
 
 ## Debug
