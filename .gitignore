@@ -1,6 +1,7 @@
 /.vscode/
 .terraform/
 .terraform.lock.hcl
+.terraform.tfstate.lock.info
 terraform.tfstate
 terraform.tfstate.backup
 local.tf
@@ -8,4 +9,3 @@ local.ini
 /ipxe/
 /disk.img
 /disk.img-*
-

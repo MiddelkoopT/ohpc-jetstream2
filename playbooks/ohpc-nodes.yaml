@@ -20,6 +20,7 @@
           fi
         done
         wwctl configure --all
+        wwctl overlay build
 
         touch /root/add-nodes.stamp
 

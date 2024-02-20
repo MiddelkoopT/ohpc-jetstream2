@@ -176,7 +176,7 @@ resource "openstack_networking_floatingip_associate_v2" "ohpc" {
 resource "openstack_compute_instance_v2" "ohpc" {
   name = "head"
   image_name = "Featured-RockyLinux9"
-  flavor_name = "m3.tiny"
+  flavor_name = "m3.small"
   key_pair = "orange"
   network {
     port = openstack_networking_port_v2.ohpc-external.id
