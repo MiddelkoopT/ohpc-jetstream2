@@ -16,7 +16,7 @@
             echo $IP $NODE $MAC
             wwctl node add $NODE
             wwctl node set -y --container rocky-9 $NODE
-            wwctl node set -y --ipaddr $IP --hwaddr $MAC $NODE
+            wwctl node set -y --ipaddr $IP --netmask 255.255.0.0 --hwaddr $MAC $NODE
           fi
         done
         wwctl configure --all
