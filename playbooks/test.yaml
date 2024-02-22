@@ -1,0 +1,13 @@
+- name: Test Playbook
+  hosts: head
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
+
+    - name: Variables
+      ansible.builtin.lineinfile:
+        path: test.json
+        create: true
+        mode: '0600'
+        line: '"{{ warewulf_build }}"'
+      when: not warewulf_build

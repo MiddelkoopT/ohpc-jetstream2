@@ -48,11 +48,58 @@
           - ohpc-base
           - ohpc-slurm-client
           - ohpc-slurm-server
-          - warewulf-ohpc
           - hwloc-ohpc
           - chrony
           - jq
           - mtools
+
+    - name: Install Warewulf (RPM)
+      ansible.builtin.yum:
+        name:
+          - warewulf-ohpc
+      when: not warewulf_build
+
+    - name: Install Warewulf build dependencies
+      ansible.builtin.yum:
+        name:
+          - dhcp-server
+          - tftp-server
+          - ipxe-bootimgs-x86
+          - ipxe-bootimgs-aarch64
+          - golang
+          - gpgme-devel
+      when: warewulf_build
+
+    - name: Build Warewulf from source
+      # noqa: command-instead-of-module
+      ansible.builtin.shell: |
+        cd /usr/src
+        git clone https://github.com/warewulf/warewulf.git
+        cd warewulf
+        make clean defaults \
+          PREFIX=/usr \
+          BINDIR=/usr/bin \
+          SYSCONFDIR=/etc \
+          DATADIR=/usr/share \
+          LOCALSTATEDIR=/var/lib \
+          SHAREDSTATEDIR=/var/lib \
+          MANDIR=/usr/share/man \
+          INFODIR=/usr/share/info \
+          DOCDIR=/usr/share/doc \
+          SRVDIR=/var/lib \
+          TFTPDIR=/var/lib/tftpboot \
+          SYSTEMDDIR=/usr/lib/systemd/system \
+          BASHCOMPDIR=/etc/bash_completion.d/ \
+          FIREWALLDDIR=/usr/lib/firewalld/services \
+          WWCLIENTDIR=/warewulf
+        make all
+        make install
+
+        touch /root/warewulf-build.stamp
+
+      when: warewulf_build
+      args:
+        creates: /root/warewulf-build.stamp
 
     - name: Add head localnet to chrony
       ansible.builtin.lineinfile:
@@ -104,10 +151,13 @@
         systemctl enable --now munge
         systemctl enable --now slurmctld
 
-        ## Node Image
+        ## Import node image
         wwctl container import docker://ghcr.io/hpcng/warewulf-rockylinux:9 rocky-9
         wwctl container syncuser rocky-9 --write # get uid/gid in before install
         wwctl overlay build
+
+        ## Configure warewulf default profile for network
+        wwctl profile set -y default --netmask 255.255.0.0
 
         touch /root/head.stamp
 
@@ -159,8 +209,9 @@
 
         useradd --create-home --shell=/bin/bash --user-group auser
         wwctl container syncuser rocky-9 --write
+        wwctl overlay build
 
-        touch /root/node.stamp
+        touch /root/configure-node-image.stamp
 
       args:
-        creates: /root/node.stamp
+        creates: /root/configure-node-image.stamp
