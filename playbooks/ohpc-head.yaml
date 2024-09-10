@@ -152,7 +152,7 @@
         systemctl enable --now slurmctld
 
         ## Import node image
-        wwctl container import docker://ghcr.io/hpcng/warewulf-rockylinux:9 rocky-9
+        wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
         wwctl container syncuser rocky-9 --write # get uid/gid in before install
         wwctl overlay build
 

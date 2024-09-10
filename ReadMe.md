@@ -43,3 +43,10 @@ ssh -i ~/.ssh/id_rsa -R 8180 c0
 export all_proxy=socks5h://127.0.0.1:8180
 scontrol update nodename=c0 state=RESUME
 ```
+
+## Run
+
+```bash
+./create.sh
+./run.sh
+```
