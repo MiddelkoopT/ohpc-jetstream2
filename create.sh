@@ -3,7 +3,7 @@ set -e
 
 echo "=== create.sh"
 
-tofu apply -auto-approve
+tofu apply -auto-approve -var-file=local.tfvars
 
 echo "--- removing known-hosts entries"
 

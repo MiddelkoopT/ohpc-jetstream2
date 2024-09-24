@@ -4,22 +4,20 @@
   tasks:
 
     - name: Upgrade all packages
-      ansible.builtin.yum:
+      ansible.builtin.apt:
         name: '*'
         state: latest # noqa package-latest
 
     - name: Prep base systems
-      ansible.builtin.yum:
+      ansible.builtin.apt:
         name:
-          - yum-utils
-          - dnf-plugins-core
+          - apt-utils
 
     - name: Check if reboot is required
-      ansible.builtin.command: /usr/bin/needs-restarting -r
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
       register: needs_reboot
-      changed_when: false
-      failed_when: needs_reboot.rc > 1
 
     - name: Reboot system
       ansible.builtin.reboot:
-      when: needs_reboot.rc
+      when: needs_reboot.stat.exists

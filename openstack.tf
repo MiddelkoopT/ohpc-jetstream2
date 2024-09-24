@@ -175,8 +175,8 @@ resource "openstack_networking_floatingip_associate_v2" "ohpc" {
 
 resource "openstack_compute_instance_v2" "ohpc" {
   name = "head"
-  image_name = "Featured-RockyLinux9"
-  flavor_name = "m3.small"
+  image_name = var.head_image
+  flavor_name = var.head_size
   key_pair = "orange"
   network {
     port = openstack_networking_port_v2.ohpc-external.id
@@ -192,10 +192,10 @@ resource "openstack_compute_instance_v2" "ohpc" {
 }
 
 resource "openstack_compute_instance_v2" "node" {
-  count = 1
+  count = var.node_count
   name = "c${count.index}"
   image_name = "efi-ipxe"
-  flavor_name = "m3.small"
+  flavor_name = var.node_size
   network {
     uuid = openstack_networking_network_v2.ohpc-internal.id
     fixed_ip_v4 = cidrhost(openstack_networking_subnet_v2.ohpc-internal-ipv4.cidr, 256 + count.index)
@@ -210,7 +210,7 @@ resource "local_file" "ansible" {
   content = <<-EOF
     ## auto-generated
     [ohpc]
-    head ansible_host=${openstack_networking_port_v2.ohpc-external.all_fixed_ips[1]} ansible_user=rocky arch=x86_64
+    head ansible_host=${openstack_networking_port_v2.ohpc-external.all_fixed_ips[1]} ansible_user=${var.head_user} arch=x86_64
 
     [ohpc:vars]
     sshkey=${var.ssh_public_key}

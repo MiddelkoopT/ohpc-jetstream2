@@ -14,4 +14,4 @@ if [[ -n "${OHPC_IP6}" ]] ; then
   ssh-keygen -R $OHPC_IP6
 fi
 
-tofu destroy -auto-approve
+tofu destroy -auto-approve -var-file=local.tfvars

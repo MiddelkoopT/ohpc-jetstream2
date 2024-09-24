@@ -1,27 +1,14 @@
 # OpenHPC 3.x, ww4, Rocky9, OpenStack/Jetstream2
 
 ## Setup
-Template `local.tf`, replace `$USER` and `$SSH_KEY`
+Template `local.tfvars`, replace `$USER` and `$SSH_KEY`
 Since there is only one main router - populate the `$ROUTER_ID` and `$SHARED_IVP6` pool variables. This could be automated with `openstack port list --router` and a tofu import (see router docs).
 
 ```
-variable "username" {
-    type = string
-    default = "$USER"
-}
-variable "ssh_public_key" {
-    type = string
-    default = "$SSH_KEY"
-}
-variable "openstack_router_id" {
-    type = string
-    default = "$ROUTER"
-}
-
-variable "openstack_subnet_pool_shared_ipv6" {
-    type = string
-    default = "$SHARED_IPV6"
-}
+username = "$USER"
+ssh_public_key = "$SSH_KEY"
+openstack_router_id = "$ROUTER"
+openstack_subnet_pool_shared_ipv6 = "$SHARED_IPV6"
 ```
 
 Create the EFI image

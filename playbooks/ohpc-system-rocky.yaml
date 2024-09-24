@@ -1,0 +1,24 @@
+- name: Configure System
+  hosts: head
+  become: true
+  tasks:
+
+    - name: Upgrade all packages
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest # noqa package-latest
+
+    - name: Prep base systems
+      ansible.builtin.dnf:
+        name:
+          - dnf-plugins-core
+
+    - name: Check if reboot is required
+      ansible.builtin.command: /usr/bin/needs-restarting -r
+      register: needs_reboot
+      changed_when: false
+      failed_when: needs_reboot.rc > 1
+
+    - name: Reboot system
+      ansible.builtin.reboot:
+      when: needs_reboot.rc
