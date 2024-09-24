@@ -10,6 +10,7 @@ while ! ssh ubuntu@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
 ansible --verbose all -m ping
 
 ansible-playbook -v playbooks/system-ubuntu.yaml
+ansible-playbook -v playbooks/warewulf-head.yaml
 
 echo ubuntu@$OHPC_IP
 echo '--- done'
