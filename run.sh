@@ -9,7 +9,7 @@ while ! ssh rocky@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
 
 ansible --verbose all -m ping
 
-ansible-playbook -v playbooks/ohpc-system-rocky.yaml
+ansible-playbook -v playbooks/system-rocky.yaml
 ansible-playbook -v playbooks/ohpc-head.yaml
 ansible-playbook -v playbooks/ohpc-nodes.yaml
 
