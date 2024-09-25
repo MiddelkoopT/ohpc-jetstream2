@@ -87,6 +87,9 @@
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
+        set -e
+
+        ## Config
         sms_name=head
 
         ## Warewulf
@@ -108,6 +111,9 @@
         systemctl enable --now munge
         systemctl enable --now slurmctld
 
+        ## Configure warewulf default profile for network
+        wwctl profile set -y default --netmask 255.255.0.0
+
         touch /root/head.stamp
 
       args:
@@ -119,45 +125,58 @@
   tasks:
     - name: Generate compute node image
       ansible.builtin.shell: |
+        set -e
+
+        ## Config
         sms_ip=10.5.0.8
 
         ## Import node image
         wwctl container import docker://registry.docker.com/library/ubuntu:24.04 ubuntu-24.04
-        # wwctl container syncuser ubuntu-24.04 --write # get uid/gid in before install
+        wwctl container syncuser ubuntu-24.04 --write # set head uid/gid in container before install
         wwctl overlay build
 
-        ## Configure warewulf default profile for network
-        wwctl profile set -y default --netmask 255.255.0.0
+        ## Build and configure node
+        wwctl container exec ubuntu-24.04 /bin/bash <<EOF
 
-        # wwctl container exec ubuntu-24.04 /bin/bash <<EOF
-        # export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install --yes apt-utils
+        apt-get dist-upgrade --yes
 
-        # dnf install -y dnf-plugins-core
-        # dnf config-manager --set-enabled crb
-        # dnf install -y epel-release
+        ## Install kernel
+        apt-get install --yes --no-install-recommends linux-image-generic linux-tools-generic
+        rm -v /initrd.img* /vmlinuz*
 
-        # dnf upgrade -y
-        # dnf install -y install kernel
-        # passwd -d root # allow serial console login
+        ## Install base packages
+        apt-get install --yes --no-install-recommends curl jq zstd cpio procps iproute2 busybox-static
+        apt-get install --yes --no-install-recommends init udev dbus polkitd
+        apt-get install --yes --no-install-recommends systemd-timesyncd systemd-resolved
+        apt-get install --yes --no-install-recommends openssh-server python3
+        apt-get install --yes less vim
 
-        # dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
+        ## Configure Image
+        passwd -d root # allow serial console login
 
-        # dnf install -y ohpc-base-compute hwloc-ohpc
-        # dnf install -y ohpc-slurm-client
-        # systemctl enable munge
+        mount -t devpts devpts /dev/pts ## workarround
+        install -dv --mode=700 --owner=munge --group=munge /etc/munge
+        touch /etc/munge/munge.key ## blank file will be replace with the overlay (bypass container install error)
+        apt-get install --yes munge
+        systemctl enable munge
+        umount /dev/pts ## workarround
 
-        # dnf install -y chrony
-        # echo "server ${sms_ip} iburst" >> /etc/chrony.conf
+        apt-get install --yes slurmd
+        echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/default/slurmd
+        systemctl enable slurmd
 
-        # echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/sysconfig/slurmd
-        # systemctl enable slurmd
+        apt-get install --yes lmod
 
-        # dnf install -y lmod-ohpc
+        ## Cleanup
+        apt-get clean
 
-        # dnf clean all
-        # EOF
+        echo "exit container"
+        EOF
 
-        # wwctl container syncuser rocky-9 --write
+        #wwctl container syncuser rocky-9 --write
 
         # wwctl overlay mkdir generic --mode 0700 /etc/munge
         # wwctl overlay import generic /etc/munge/munge.key
