@@ -11,11 +11,6 @@
           - curl
           - chrony
 
-    - name: Add head to /etc/hosts
-      ansible.builtin.lineinfile:
-        path: /etc/hosts
-        line: "10.5.0.8    head.localdomain head"
-
     - name: Add head localnet to chrony
       ansible.builtin.lineinfile:
         path: /etc/chrony/chrony.conf
@@ -41,6 +36,7 @@
           - ipxe
           - golang
           - unzip
+          - openmpi-bin
 
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
@@ -59,7 +55,7 @@
           INFODIR=/usr/share/info \
           DOCDIR=/usr/share/doc \
           SRVDIR=/var/lib \
-          TFTPDIR=/var/lib/tftpboot \
+          TFTPDIR=/srv/tftp \
           SYSTEMDDIR=/usr/lib/systemd/system \
           BASHCOMPDIR=/etc/bash_completion.d/ \
           FIREWALLDDIR=/usr/lib/firewalld/services \
@@ -88,8 +84,6 @@
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
-
-        ## Config
         sms_name=head
 
         ## Warewulf
@@ -98,21 +92,28 @@
         wwctl configure nfs
 
         ## Slurm
-        # cp /etc/slurm/slurm.conf.ohpc /etc/slurm/slurm.conf
-        # cp /etc/slurm/cgroup.conf.example /etc/slurm/cgroup.conf
+        cp -v /usr/share/doc/slurmd/examples/slurm.conf.simple /etc/slurm/slurm.conf
 
-        # perl -pi -e "s/SlurmctldHost=\S+/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
-        # odeName=c[0-4] State=UNKNOWN
-        # perl -pi -e 's/^NodeName=c\[1-4\].*$/NodeName=c[0-4] State=UNKNOWN/' /etc/slurm/slurm.conf
-        # perl -pi -e 's/^PartitionName=normal Nodes=c\[1-4\]/PartitionName=normal Nodes=c[0-4]/' /etc/slurm/slurm.conf
+        perl -pi -e "s/^SlurmctldHost=.*/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
+        grep -e '^SlurmctldHost=' /etc/slurm/slurm.conf
+
+        perl -pi -e 's/^NodeName=.*$/NodeName=c[0-4] State=UNKNOWN/' /etc/slurm/slurm.conf
+        grep -i '^NodeName' /etc/slurm/slurm.conf
+
+        perl -pi -e 's/^PartitionName=.*/PartitionName=normal Nodes=c[0-4]/' /etc/slurm/slurm.conf
+        grep -i '^PartitionName' /etc/slurm/slurm.conf
 
         ## Start head node services
         systemctl enable --now warewulfd
         systemctl enable --now munge
+        systemctl enable --now slurmdbd
         systemctl enable --now slurmctld
 
         ## Configure warewulf default profile for network
         wwctl profile set -y default --netmask 255.255.0.0
+
+        ## Configure boot
+        cp -v /usr/lib/ipxe/snponly.efi /srv/tftp/warewulf/ipxe-snponly-x86_64.efi
 
         touch /root/head.stamp
 
@@ -126,8 +127,6 @@
     - name: Generate compute node image
       ansible.builtin.shell: |
         set -e
-
-        ## Config
         sms_ip=10.5.0.8
 
         ## Import node image
@@ -176,16 +175,14 @@
         echo "exit container"
         EOF
 
-        #wwctl container syncuser rocky-9 --write
+        wwctl overlay mkdir generic --mode 0700 /etc/munge
+        wwctl overlay import generic /etc/munge/munge.key
+        wwctl overlay chown generic /etc/munge/munge.key $(id -u munge) $(id -g munge)
+        wwctl overlay chown generic /etc/munge $(id -u munge) $(id -g munge)
 
-        # wwctl overlay mkdir generic --mode 0700 /etc/munge
-        # wwctl overlay import generic /etc/munge/munge.key
-        # wwctl overlay chown generic /etc/munge/munge.key $(id -u munge) $(id -g munge)
-        # wwctl overlay chown generic /etc/munge $(id -u munge) $(id -g munge)
-
-        # useradd --create-home --shell=/bin/bash --user-group auser
-        # wwctl container syncuser rocky-9 --write
-        # wwctl overlay build
+        useradd --create-home --shell=/bin/bash --user-group auser
+        wwctl container syncuser ubuntu-24.04 --write --build
+        wwctl overlay build
 
         touch /root/configure-node-image.stamp
 

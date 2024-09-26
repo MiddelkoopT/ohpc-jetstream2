@@ -11,6 +11,7 @@ ansible --verbose all -m ping
 
 ansible-playbook -v playbooks/system-ubuntu.yaml
 ansible-playbook -v playbooks/warewulf-head.yaml
+ansible-playbook -v playbooks/nodes.yaml --extra-vars image_name=ubuntu-24.04
 
 echo ubuntu@$OHPC_IP
 echo '--- done'

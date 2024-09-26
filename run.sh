@@ -11,7 +11,7 @@ ansible --verbose all -m ping
 
 ansible-playbook -v playbooks/system-rocky.yaml
 ansible-playbook -v playbooks/ohpc-head.yaml
-ansible-playbook -v playbooks/ohpc-nodes.yaml
+ansible-playbook -v playbooks/nodes.yaml
 
 echo rocky@$OHPC_IP
 echo '--- done'
