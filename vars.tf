@@ -30,7 +30,7 @@ variable "head_size" {
 
 variable "node_size" {
     type = string
-    default = "m3.small"
+    default = "m3.quad"
 }
 
 variable "node_count" {
