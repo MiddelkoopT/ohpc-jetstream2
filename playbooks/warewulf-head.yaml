@@ -95,18 +95,20 @@
         cp -v /usr/share/doc/slurmd/examples/slurm.conf.simple /etc/slurm/slurm.conf
 
         perl -pi -e "s/^SlurmctldHost=.*/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
-        grep -e '^SlurmctldHost=' /etc/slurm/slurm.conf
+        grep '^SlurmctldHost=' /etc/slurm/slurm.conf
 
         perl -pi -e 's/^NodeName=.*$/NodeName=c[0-4] State=UNKNOWN/' /etc/slurm/slurm.conf
-        grep -i '^NodeName' /etc/slurm/slurm.conf
+        grep '^NodeName' /etc/slurm/slurm.conf
 
-        perl -pi -e 's/^PartitionName=.*/PartitionName=normal Nodes=c[0-4]/' /etc/slurm/slurm.conf
-        grep -i '^PartitionName' /etc/slurm/slurm.conf
+        perl -pi -e 's/^PartitionName=.*$/PartitionName=normal Nodes=c[0-4] Default=YES/' /etc/slurm/slurm.conf
+        grep '^PartitionName' /etc/slurm/slurm.conf
+
+        grep 'SlurmctldParameters=' /etc/slurm/slurm.conf || echo 'SlurmctldParameters=enable_configless' >> /etc/slurm/slurm.conf
+        grep 'SlurmctldParameters=' /etc/slurm/slurm.conf
 
         ## Start head node services
         systemctl enable --now warewulfd
         systemctl enable --now munge
-        systemctl enable --now slurmdbd
         systemctl enable --now slurmctld
 
         ## Configure warewulf default profile for network
@@ -137,10 +139,14 @@
         ## Build and configure node
         wwctl container exec ubuntu-24.04 /bin/bash <<EOF
 
+        ## Update image
         export DEBIAN_FRONTEND=noninteractive
         apt-get update
         apt-get install --yes apt-utils
         apt-get dist-upgrade --yes
+
+        ## Configure Image
+        passwd -d root # allow serial console login
 
         ## Install kernel
         apt-get install --yes --no-install-recommends linux-image-generic linux-tools-generic
@@ -153,8 +159,19 @@
         apt-get install --yes --no-install-recommends openssh-server python3
         apt-get install --yes less vim
 
-        ## Configure Image
-        passwd -d root # allow serial console login
+        ## Network
+        systemctl enable systemd-networkd
+        cat > /etc/systemd/network/en.network <<CONF
+        [Match]
+        Name=en*
+
+        [Network]
+        DHCP=yes
+        LinkLocalAddressing=ipv6
+        CONF
+
+        wwctl overlay mkdir wwinit /etc/systemd/network
+        wwctl overlay import wwinit en.network /etc/systemd/network/en.network
 
         mount -t devpts devpts /dev/pts ## workarround
         install -dv --mode=700 --owner=munge --group=munge /etc/munge
@@ -174,6 +191,9 @@
 
         echo "exit container"
         EOF
+
+        ## fix init hack
+        perl -pi -e 's/#!\/bin\/sh/\/bin\/bash/' /var/lib/warewulf/overlays/wwinit/rootfs/init
 
         wwctl overlay mkdir generic --mode 0700 /etc/munge
         wwctl overlay import generic /etc/munge/munge.key

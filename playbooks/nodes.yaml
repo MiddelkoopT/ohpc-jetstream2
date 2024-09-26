@@ -23,6 +23,9 @@
               wwctl node set -y --ipaddr $IP --hwaddr $MAC $NODE
             fi
           done
+
+          wwctl node set --yes --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238" 'c[0-4]'
+
           wwctl configure --all
           wwctl overlay build
 

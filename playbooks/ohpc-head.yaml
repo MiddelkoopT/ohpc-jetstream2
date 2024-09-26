@@ -144,7 +144,7 @@
         perl -pi -e "s/SlurmctldHost=\S+/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
         odeName=c[0-4] State=UNKNOWN
         perl -pi -e 's/^NodeName=c\[1-4\].*$/NodeName=c[0-4] State=UNKNOWN/' /etc/slurm/slurm.conf
-        perl -pi -e 's/^PartitionName=normal Nodes=c\[1-4\]/PartitionName=normal Nodes=c[0-4]/' /etc/slurm/slurm.conf
+        perl -pi -e 's/^PartitionName=.*$/PartitionName=normal Nodes=c[0-4] Default=YES/' /etc/slurm/slurm.conf
 
         ## Start head node services
         systemctl enable --now warewulfd
