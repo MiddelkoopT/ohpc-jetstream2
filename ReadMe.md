@@ -23,14 +23,6 @@ hw_scsi_model=virtio-scsi
 openstack image create --disk-format raw --file disk.img --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 efi-ipxe
 ```
 
-## Debug
-```bash
-openstack console log show c0
-ssh -i ~/.ssh/id_rsa -R 8180 c0
-export all_proxy=socks5h://127.0.0.1:8180
-scontrol update nodename=c0 state=RESUME
-```
-
 ## Run
 
 ```bash

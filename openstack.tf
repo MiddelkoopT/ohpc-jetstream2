@@ -193,12 +193,12 @@ resource "openstack_compute_instance_v2" "ohpc" {
 
 resource "openstack_compute_instance_v2" "node" {
   count = var.node_count
-  name = "c${count.index}"
+  name = "c${count.index + 1}"
   image_name = "efi-ipxe"
   flavor_name = var.node_size
   network {
     uuid = openstack_networking_network_v2.ohpc-internal.id
-    fixed_ip_v4 = cidrhost(openstack_networking_subnet_v2.ohpc-internal-ipv4.cidr, 256 + count.index)
+    fixed_ip_v4 = cidrhost(openstack_networking_subnet_v2.ohpc-internal-ipv4.cidr, 256 + count.index + 1)
   }
   security_groups = [openstack_networking_secgroup_v2.ohpc-internal.name]
 }

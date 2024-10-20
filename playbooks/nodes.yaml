@@ -26,9 +26,8 @@
 
           wwctl node set --yes --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238" 'c[0-4]'
 
-          wwctl configure --all
-          systemctl restart isc-dhcp-server ## needs to be put in warewulf.conf
           wwctl overlay build
+          wwctl configure --all
 
           touch /root/add-nodes.stamp
 
