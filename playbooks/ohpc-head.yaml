@@ -24,12 +24,16 @@
         state: restarted
       when: networkmanager_eth1.changed
 
+    - name: Check if firewalld is installed
+      ansible.builtin.package_facts:
+
     - name: Stop and disable firewall
       # noqa: no-handler
       ansible.builtin.systemd_service:
         name: firewalld.service
         enabled: false
         state: stopped
+      when: "'firewalld' in ansible_facts.packages"
 
     - name: Add head to /etc/hosts
       ansible.builtin.lineinfile:
