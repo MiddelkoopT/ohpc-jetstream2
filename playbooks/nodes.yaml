@@ -9,7 +9,7 @@
         cmd: |
           IMAGE_NAME={{ image_name }}
 
-          for I in {0..4} ; do
+          for I in {1..4} ; do
             IP=10.5.1.$I
             NODE=c$I
             MAC=""
@@ -24,7 +24,7 @@
             fi
           done
 
-          wwctl node set --yes --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238" 'c[0-4]'
+          wwctl node set --yes --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238" 'c[1-4]'
 
           wwctl overlay build
           wwctl configure --all
