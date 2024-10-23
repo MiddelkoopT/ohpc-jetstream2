@@ -101,7 +101,7 @@ wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9.4
 
 
 # 3.8.2 Add OpenHPC (warewulf4_add_to_compute_chroot_intro)
-wwctl container exec rocky-9.4 /bin/bash <<EOF
+wwctl container exec rocky-9.4 /bin/bash <<- EOF
 dnf -y install http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
 dnf -y update
 /bin/false
@@ -113,13 +113,13 @@ export CHROOT=/srv/warewulf/chroots/rocky-9.4/rootfs
 echo 'passwd -d root ; /bin/false' | wwctl container exec rocky-9.4 /bin/bash
 
 # (warewulf4_add_to_compute_chroot_intro)
-wwctl container exec rocky-9.4 /bin/bash <<EOF
+wwctl container exec rocky-9.4 /bin/bash <<- EOF
 dnf -y install ohpc-base-compute
 /bin/false
 EOF
 
 # (steps)
-wwctl container exec rocky-9.4 /bin/bash <<EOF
+wwctl container exec rocky-9.4 /bin/bash <<- EOF
   # Add Slurm client support meta-package and enable munge and slurmd
   dnf -y install ohpc-slurm-client
   systemctl enable munge
@@ -184,4 +184,15 @@ wwctl configure --all
 systemctl enable --now munge
 systemctl enable --now slurmctld.service
 
+```
+
+Generate CI `recipe.sh`
+```bash
+../../../../parse_doc.pl steps.tex > recipe.sh 
+```
+
+## OHPC Build
+
+```bash
+sudo dnf -y group install "Development Tools"
 ```
