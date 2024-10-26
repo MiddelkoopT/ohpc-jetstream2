@@ -6,7 +6,7 @@
 openstack console log show c0
 ssh -i ~/.ssh/id_rsa -R 8180 c0
 export all_proxy=socks5h://127.0.0.1:8180
-scontrol update nodename=c0 state=RESUME
+scontrol update nodename=c1 state=RESUME
 ```
 
 ## Rocky 9 clean image
@@ -37,14 +37,21 @@ ntp_server=pool.ntp.org
 sms_name=head
 sms_ip=10.5.0.8
 sms_eth_internal=eth1
-internal_network=10.5.0.0
 internal_netmask=255.255.0.0
 compute_prefix=c
-num_computes=4
+num_computes=1
 c_ip[0]=10.5.1.1
 c_ip[1]=10.5.1.2
 c_ip[2]=10.5.1.3
 c_ip[3]=10.5.1.4
+
+## local: Map MAC to IP
+unset c_mac
+for ((i=0; i<$num_computes; i++)) ; do
+  ping -q -c 1 -W 0.2 ${c_ip[$i]}
+  c_mac[$i]=$(ip -json neigh | jq -r ".[] | select(.dst == \"${c_ip[$i]}\").lladdr")
+done
+echo ${c_mac[@]}
 
 # 3.1 Enable OpenHPC repository
 dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
@@ -78,13 +85,12 @@ perl -pi -e 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/
 #ip link set dev ${sms_eth_internal} up
 #ip address add ${sms_ip}/${internal_netmask} broadcast + dev ${sms_eth_internal}
 
-# local: static IP's
-perl -pi -e 's/^(dhcp:.*)/$1\n  template: static/' /etc/warewulf/warewulf.conf
+internal_network=$(python3 -c "import ipaddress; print(str(ipaddress.IPv4Interface('$sms_ip/$internal_netmask').network.network_address))")
 
 perl -pi -e "s/ipaddr:.*/ipaddr: ${sms_ip}/" /etc/warewulf/warewulf.conf
 perl -pi -e "s/netmask:.*/netmask: ${internal_netmask}/" /etc/warewulf/warewulf.conf
 perl -pi -e "s/network:.*/network: ${internal_network}/" /etc/warewulf/warewulf.conf
-perl -pi -e "s/template:.*/template: static/" /etc/warewulf/warewulf.conf
+perl -pi -e 's/^(dhcp:.*)/$1\n  template: static/' /etc/warewulf/warewulf.conf
 perl -pi -e "s/range start:.*/range start: ${c_ip[0]}/" /etc/warewulf/warewulf.conf
 perl -pi -e "s/range end:.*/range end: ${c_ip[$((num_computes-1))]}/" /etc/warewulf/warewulf.conf
 perl -pi -e "s/mount: false/mount: true/" /etc/warewulf/warewulf.conf
@@ -98,7 +104,6 @@ wwctl configure --all
 
 # 3.8.1 Build BOS (warewulf4_mkchroot_rocky)
 wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9.4 --syncuser
-
 
 # 3.8.2 Add OpenHPC (warewulf4_add_to_compute_chroot_intro)
 wwctl container exec rocky-9.4 /bin/bash <<- EOF
@@ -139,7 +144,7 @@ EOF
 wwctl overlay import generic /etc/subuid
 wwctl overlay import generic /etc/subgid
 
-echo "server \${sms_ip} iburst" | wwctl overlay import generic <(cat) /etc/chrony.conf
+echo "server ${sms_ip} iburst" | wwctl overlay import generic <(cat) /etc/chrony.conf
 
 # 3.8.5 configure slurm files (import_ww4_files_slurm)
 wwctl overlay mkdir generic /etc/sysconfig/
@@ -156,24 +161,10 @@ wwctl overlay build
 
 # 3.9.2 register nodes (add_ww4_hosts_intro)
 
-## local: Map MAC to IP
-unset c_mac
-for ((i=0; i<$num_computes; i++)) ; do
-  ping -q -c 1 -W 0.2 ${c_ip[$i]}
-  c_mac[$i]=$(ip -json neigh | jq -r ".[] | select(.dst == \"${c_ip[$i]}\").lladdr")
-done
-echo ${c_mac[@]}
-
-for ((i=0; i<$num_computes; i++)) ; do
+for ((i=0; i<$num_computes; i++)) ; do 
   wwctl node delete --yes ${compute_prefix}$((i+1))
-  wwctl node add --discoverable=yes --container=rocky-9.4 --ipaddr=${c_ip[$i]} --netmask=${internal_netmask} ${compute_prefix}$((i+1))
-done
-
-## local: register mac
-for ((i=0; i<$num_computes; i++)) ; do
-  if [[ ${c_mac[$i]} != 'null' ]] ; then 
-    wwctl node set --yes ${compute_prefix}$((i+1)) --hwaddr=${c_mac[$i]}
-  fi
+  wwctl node add --container=rocky9.4 \
+    --ipaddr=${c_ip[$i]} --hwaddr=${c_mac[$i]} --netmask=${internal_netmask} ${compute_prefix}$((i+1))
 done
 
 # 3.9.2 finalize (add_ww4_hosts_finalize)
