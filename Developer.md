@@ -154,13 +154,15 @@ echo ${c_mac[@]}
 # Local: Enable dev (use for 3.x branch/Warewulf 4.5)
 dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.2:/Factory/EL_9/
 
-# 3.1 Enable OpenHPC repository
+# 3.1 Enable OpenHPC repository (not in recipe.sh)
 dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
 
-## Run relevant recipe.sh from "Begin OpenHPC Recipe"
+## Run "Add baseline OpenHPC" (3.3) and "Add resource management" (3.4)
 
-# Fix local node definitions
-perl -pi -e 's/^NodeName=.*$/NodeName=c[1-4] State=UNKNOWN/' /etc/slurm/slurm.conf
-perl -pi -e 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/' /etc/slurm/slurm.conf
-systemctl restart slurmctld
+# Local: Patch templates for local hardware.
+sed -i 's/^NodeName=.*$/NodeName=c[1-4] State=UNKNOWN/' /etc/slurm/slurm.conf
+sed -i 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/' /etc/slurm/slurm.conf
+
+## Remainder of recipe.sh
+
 ```
