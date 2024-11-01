@@ -45,6 +45,14 @@
         name: http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
         disable_gpg_check: true
 
+    - name: Add OpenHPC Release Factory (3.2)
+      ansible.builtin.yum_repository:
+        name: openhpc-factory
+        description: OpenHPC 3.2 Factory Repository
+        baseurl: http://obs.openhpc.community:82/OpenHPC3:/3.2:/Factory/EL_9/
+        enabled: true
+        gpgcheck: false
+
     - name: Install OHPC base
       ansible.builtin.dnf:
         name:
@@ -134,11 +142,16 @@
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         sms_name=head
+        sms_ip=10.5.0.8
+        internal_netmask=255.255.0.0
+        ipv4_gateway=10.5.0.1
+        dns_servers=8.8.8.8
+
+        # Bug: dhcpd template does not set next-server
+        echo "next-server ${sms_ip};" >> /srv/warewulf/overlays/host/rootfs/etc/dhcpd.conf.ww
 
         ## Warewulf
-        wwctl configure hostfile
-        wwctl configure ssh
-        wwctl configure nfs
+        wwctl configure --all
 
         ## Slurm
         cp /etc/slurm/slurm.conf.ohpc /etc/slurm/slurm.conf
@@ -159,8 +172,8 @@
         wwctl overlay build
 
         ## Configure warewulf default profile for network
-        wwctl profile set -y default --netmask 255.255.0.0
-
+        wwctl profile set -y default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
+        wwctl profile set -y default --netdev=default --nettagadd=DNS=${dns_servers}
         touch /root/head.stamp
 
       args:
