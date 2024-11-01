@@ -41,6 +41,8 @@
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
+        set -e
+
         cd /usr/src
         git clone https://github.com/warewulf/warewulf.git
         cd warewulf
@@ -84,6 +86,7 @@
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
+
         sms_name=head
 
         ## Warewulf

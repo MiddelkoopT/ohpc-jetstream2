@@ -73,17 +73,20 @@
     - name: Install Warewulf build dependencies
       ansible.builtin.dnf:
         name:
+          - git
+          - unzip
           - dhcp-server
           - tftp-server
           - ipxe-bootimgs-x86
           - ipxe-bootimgs-aarch64
           - golang
-          - gpgme-devel
       when: warewulf_build
 
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
+        set -e
+
         cd /usr/src
         git clone https://github.com/warewulf/warewulf.git
         cd warewulf
@@ -141,6 +144,8 @@
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
+        set -e
+
         sms_name=head
         sms_ip=10.5.0.8
         internal_netmask=255.255.0.0
@@ -185,6 +190,8 @@
   tasks:
     - name: Generate compute node image
       ansible.builtin.shell: |
+        set -e
+
         sms_ip=10.5.0.8
 
         wwctl container exec rocky-9 /bin/bash <<EOF
