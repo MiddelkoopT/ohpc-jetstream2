@@ -1,19 +1,57 @@
-- name: Configure Warewulf head node
+- name: Configure Warewulf Head Node
   hosts: head
   become: true
   tasks:
 
-    - name: Install Packages
+    - name: Install base packages (apt)
       ansible.builtin.apt:
         name:
           - ca-certificates
           - git
           - curl
+      when: ansible_pkg_mgr == "apt"
+
+    - name: Install Warewulf dependencies (apt)
+      ansible.builtin.apt:
+        name:
+          - unzip
+          - golang
           - chrony
+          - isc-dhcp-server
+          - tftpd-hpa
+          - ipxe
+          - nfs-kernel-server
+          - slurmd
+          - slurmctld
+          - openmpi-bin
+      when: ansible_pkg_mgr == "apt"
+
+    - name: Install base packages (dnf)
+      ansible.builtin.dnf:
+        name:
+          - epel-release
+          - ca-certificates
+          - git
+          - curl
+      when: ansible_pkg_mgr == "dnf"
+
+    - name: Install Warewulf build dependencies (dnf)
+      ansible.builtin.dnf:
+        name:
+          - unzip
+          - golang
+          - chrony
+          - dhcp-server
+          - tftp-server
+          - ipxe-bootimgs-x86
+          - ipxe-bootimgs-aarch64
+          - slurm-slurmd
+          - slurm-slurmctld
+      when: ansible_pkg_mgr == "dnf"
 
     - name: Add head localnet to chrony
       ansible.builtin.lineinfile:
-        path: /etc/chrony/chrony.conf
+        path: "{{ '/etc/chrony/chrony.conf' if ansible_os_family == 'Debian' else '/etc/chrony.conf' }}"
         line: "allow 10.5.0.0/16"
       register: chrony_conf
 
@@ -24,19 +62,6 @@
         enabled: true
         state: restarted
       when: chrony_conf.changed
-
-    - name: Install Warewulf build dependencies
-      ansible.builtin.apt:
-        name:
-          - isc-dhcp-server
-          - tftpd-hpa
-          - nfs-kernel-server
-          - slurmd
-          - slurmctld
-          - ipxe
-          - golang
-          - unzip
-          - openmpi-bin
 
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
@@ -65,10 +90,8 @@
         make all
         make install
 
-        touch /root/warewulf-build.stamp
-
       args:
-        creates: /root/warewulf-build.stamp
+        creates: /usr/bin/wwctl
 
     - name: WW4 warewulf.conf
       ansible.builtin.template:
@@ -87,14 +110,17 @@
       ansible.builtin.shell: |
         set -e
 
+        ## Config
         sms_name=head
 
         ## Warewulf
+        wwctl configure --all
         wwctl configure hostfile
         wwctl configure ssh
         wwctl configure nfs
 
         ## Slurm
+        # Use /etc/warewulf/examples/slurm.conf.ww - templated.... (do it the warewulf way)
         cp -v /usr/share/doc/slurmd/examples/slurm.conf.simple /etc/slurm/slurm.conf
 
         perl -pi -e "s/^SlurmctldHost=.*/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf

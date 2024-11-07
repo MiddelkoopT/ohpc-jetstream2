@@ -12,6 +12,12 @@
       ansible.builtin.dnf:
         name:
           - dnf-plugins-core
+          - python3-pip
+
+    - name: Enable CRB repository
+      ansible.builtin.dnf:
+        config_manager: enabled
+        name: crb
 
     - name: Check if reboot is required
       ansible.builtin.command: /usr/bin/needs-restarting -r
