@@ -9,3 +9,5 @@ local*.ini
 /ipxe/
 /disk.img
 /disk.img-*
+/.venv/
+/.ipynb_checkpoints/

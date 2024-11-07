@@ -169,3 +169,50 @@ sed -i 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/' /et
 ## Remainder of recipe.sh
 
 ```
+
+## HPC Ecosystems Lab 3.0
+
+Resources
+* https://github.com/HPC-Ecosystems/openhpc-3.x-virtual-lab
+
+```bash
+sms_name=head
+sms_ip=10.5.0.8
+internal_network=10.5.0.0/16
+```
+
+## JupyterBook
+
+### Remote bash kernel
+
+Install Jupyter locally
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+
+python3 -m pip install pip --upgrade
+python3 -m pip install --upgrade jupyterlab
+python3 -m pip install --upgrade bash_kernel
+python3 -m bash_kernel.install
+python3 -m pip install --upgrade jupyterlab-spellchecker
+python3 -m pip install remote-kernel
+```
+
+Install bash_kernel on remote
+```bash
+sudo dnf install -y python3-pip
+sudo python3 -m pip install pip --upgrade
+sudo python3 -m pip install --upgrade bash_kernel
+sudo python3 -m bash_kernel.install
+```
+
+Configure locally the remote kernel (key must be rsa and have no passphrase)
+```bash
+python -m remote_kernel install -t rocky@head -i ~/.ssh/id_dev --kernel 'python3 -m bash_kernel'
+jupyter kernelspec list
+```
+
+Run Jupyter locally
+```bash
+jupyter-lab --port=8081
+```
