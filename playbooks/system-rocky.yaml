@@ -1,7 +1,3 @@
-- hosts: all
-  collections:
-    - community.general
-
 - name: Configure System
   hosts: head
   become: true
@@ -17,11 +13,6 @@
         name:
           - dnf-plugins-core
           - python3-pip
-
-    - name: Enable CRB repository
-      community.general.dnf_config_manager:
-        name: crb
-        state: enabled
 
     - name: Check if reboot is required
       ansible.builtin.command: /usr/bin/needs-restarting -r

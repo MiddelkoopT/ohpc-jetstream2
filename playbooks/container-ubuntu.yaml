@@ -10,7 +10,6 @@
         ## Import node image
         wwctl container import docker://registry.docker.com/library/ubuntu:24.04 ubuntu-24.04
         wwctl container syncuser ubuntu-24.04 --write # set head uid/gid in container before install
-        wwctl overlay build
 
         ## Build and configure node
         wwctl container exec --syncuser ubuntu-24.04 /bin/bash <<-EOF
@@ -70,6 +69,7 @@
         ## fix init hack
         #perl -pi -e 's/#!\/bin\/sh/\/bin\/bash/' /var/lib/warewulf/overlays/wwinit/rootfs/init
 
+        wwctl profile set --yes default --container ubuntu-24.04
         wwctl profile set --yes default --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238"
 
       args:

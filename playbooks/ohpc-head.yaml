@@ -83,18 +83,6 @@
         state: restarted
       when: chrony_conf.changed
 
-    - name: WW4 warewulf.conf
-      ansible.builtin.template:
-        src: templates/warewulf.conf.j2
-        dest: /etc/warewulf/warewulf.conf
-        mode: "600"
-
-    - name: WW4 defaults.conf
-      ansible.builtin.template:
-        src: templates/defaults.conf.j2
-        dest: /etc/warewulf/defaults.conf
-        mode: "600"
-
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
@@ -102,11 +90,23 @@
 
         sms_name=head
         sms_ip=10.5.0.8
+        internal_network=10.5.0.0
         internal_netmask=255.255.0.0
         ipv4_gateway=10.5.0.1
         dns_servers=8.8.8.8
+        dhcp_start=10.5.1.1
+        dhcp_end=10.5.1.254
 
-        # Bug: dhcpd template does not set next-server
+        sed -i "s/^ipaddr:.*/ipaddr: ${sms_ip}/" /etc/warewulf/warewulf.conf
+        sed -i "s/^netmask:.*/netmask: ${internal_netmask}/" /etc/warewulf/warewulf.conf
+        sed -i "s/network:.*/network: ${internal_network}/" /etc/warewulf/warewulf.conf
+        sed -i "s/template: default/template: static/" /etc/warewulf/warewulf.conf
+        #grep -q "template: static" /etc/warewulf/warewulf.conf || sed -i '/^dhcp:/a\  template: static' /etc/warewulf/warewulf.conf
+        sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
+        sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
+        sed -i "s/mount: false/mount: true/" /etc/warewulf/warewulf.conf
+
+        # FIXME: Bug dhcpd template does not set next-server
         echo "next-server ${sms_ip};" >> /srv/warewulf/overlays/host/rootfs/etc/dhcpd.conf.ww
 
         ## Warewulf
@@ -128,11 +128,10 @@
         ## Import node image
         wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
         wwctl container syncuser rocky-9 --write # get uid/gid in before install
-        wwctl overlay build
 
         ## Configure warewulf default profile for network
-        wwctl profile set -y default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
-        wwctl profile set -y default --netdev=default --nettagadd=DNS=${dns_servers}
+        wwctl profile set -y default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
+        wwctl profile set -y default --netname default --nettagadd=DNS=${dns_servers}
         touch /root/head.stamp
 
         ## Create a test user

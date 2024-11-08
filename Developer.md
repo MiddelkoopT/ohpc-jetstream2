@@ -222,6 +222,7 @@ Prep
 ```bash
 OHPC_IP=$(tofu output -raw ohpc_ipv6)
 while ! ssh rocky@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
+ssh rocky@$OHPC_IP sudo dnf clean all
 ansible-playbook -v playbooks/system-rocky.yaml
 ```
 

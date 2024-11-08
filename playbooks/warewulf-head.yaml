@@ -9,6 +9,7 @@
           - ca-certificates
           - git
           - curl
+          - jq
       when: ansible_pkg_mgr == "apt"
 
     - name: Install Warewulf dependencies (apt)
@@ -29,10 +30,11 @@
     - name: Install base packages (dnf)
       ansible.builtin.dnf:
         name:
-          - epel-release
           - ca-certificates
+          - epel-release
           - git
           - curl
+          - jq
       when: ansible_pkg_mgr == "dnf"
 
     - name: Install Warewulf build dependencies (dnf)
@@ -93,12 +95,6 @@
       args:
         creates: /usr/bin/wwctl
 
-    - name: WW4 warewulf.conf
-      ansible.builtin.template:
-        src: templates/warewulf.conf.j2
-        dest: /etc/warewulf/warewulf.conf
-        mode: "600"
-
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
@@ -107,9 +103,20 @@
         ## Config
         sms_name=head
         sms_ip=10.5.0.8
+        internal_network=10.5.0.0
         internal_netmask=255.255.0.0
         ipv4_gateway=10.5.0.1
         dns_servers=8.8.8.8
+        dhcp_start=10.5.1.1
+        dhcp_end=10.5.1.254
+
+        ## Configure warewulf.conf
+        sed -i "s/^ipaddr:.*/ipaddr: ${sms_ip}/" /etc/warewulf/warewulf.conf
+        sed -i "s/^netmask:.*/netmask: ${internal_netmask}/" /etc/warewulf/warewulf.conf
+        sed -i "s/^network:.*/network: ${internal_network}/" /etc/warewulf/warewulf.conf
+        sed -i "s/template: default/template: static/" /etc/warewulf/warewulf.conf
+        sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
+        sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
 
         ## Start Warewulf
         systemctl enable --now warewulfd
@@ -141,8 +148,8 @@
         sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/host/rootfs/etc/hosts.ww
 
         ## Configure warewulf default profile for network
-        wwctl profile set -y default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
-        wwctl profile set -y default --netdev=default --nettagadd=DNS=${dns_servers}
+        wwctl profile set -y default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
+        wwctl profile set -y default --netname default --netdev=default --nettagadd=DNS=${dns_servers}
 
         ## Start slurm
         systemctl enable --now munge

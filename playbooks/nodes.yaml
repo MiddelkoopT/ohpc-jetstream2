@@ -19,12 +19,16 @@
             if [[ "${MAC}" != "null" ]] ; then
               echo $IP $NODE $MAC
               wwctl node add $NODE
-              wwctl node set -y --ipaddr $IP --hwaddr $MAC $NODE
+              wwctl node set --yes --netname default --ipaddr $IP --hwaddr $MAC $NODE
             fi
           done
 
           wwctl overlay build
           wwctl configure --all
+
+          ## Nodes show up in /etc/hosts after `wwctl configure --all`
+          scontrol reconfig
+          sinfo
 
           touch /root/add-nodes.stamp
 
