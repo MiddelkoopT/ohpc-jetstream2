@@ -69,7 +69,7 @@
         set -e
 
         cd /usr/src
-        git clone https://github.com/warewulf/warewulf.git
+        git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
         cd warewulf
         make clean defaults \
           PREFIX=/usr \
@@ -143,9 +143,6 @@
         ## Configure warewulf default profile for network
         wwctl profile set -y default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
         wwctl profile set -y default --netdev=default --nettagadd=DNS=${dns_servers}
-
-        # FIXME: BUG: dhcpd template does not set next-server
-        echo "next-server ${sms_ip};" >> /var/lib/warewulf/overlays/host/rootfs/etc/dhcpd.conf.ww
 
         ## Start slurm
         systemctl enable --now munge
