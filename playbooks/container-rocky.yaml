@@ -1,0 +1,62 @@
+- name: Configure Warewulf Head Node
+  hosts: head
+  become: true
+  tasks:
+
+- name: Build Rocky Container
+  hosts: head
+  become: true
+  tasks:
+    - name: Generate compute node image
+      ansible.builtin.shell: |
+        set -e
+
+        ## Config
+        sms_ip=10.5.0.8
+
+        ## Import node image
+        wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
+        wwctl container syncuser rocky-9 --write # get uid/gid in before install
+        wwctl overlay build
+
+        ## Build container - note: heredoc
+        wwctl container exec --syncuser rocky-9 /bin/bash <<-EOF
+          export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+          ## Debug
+          passwd -d root # allow serial console login
+
+          ## Setup base OS
+          dnf install -y dnf-plugins-core
+          dnf config-manager --set-enabled crb
+          dnf install -y epel-release
+          dnf install -y python3 ca-certificates procps wget curl unzip jq
+
+          ## Update Image
+          dnf upgrade -y
+
+          ## Install Kernel
+          dnf install -y kernel
+
+          ## Install compute node packages
+          dnf install -y slurm-slurmd munge chrony
+
+          systemctl enable munge
+          systemctl enable slurmd
+
+          ## Configure node
+          echo "server ${sms_ip} iburst" >> /etc/chrony.conf
+          echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/sysconfig/slurmd
+
+          ## Extras
+          dnf install -y Lmod
+
+          ## Cleanup
+          dnf clean all
+        EOF
+
+        ## Set profile
+        wwctl profile set --yes default --container rocky-9
+        wwctl profile set --yes default --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238"
+
+      args:
+        creates: /var/lib/warewulf/provision/container/rocky-9.img.gz

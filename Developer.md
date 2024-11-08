@@ -216,3 +216,18 @@ Run Jupyter locally
 ```bash
 jupyter-lab --port=8081
 ```
+## Warewulf Build
+
+Prep
+```bash
+OHPC_IP=$(tofu output -raw ohpc_ipv6)
+while ! ssh rocky@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
+ansible-playbook -v playbooks/system-rocky.yaml
+```
+
+Build
+```bash
+ansible-playbook -v playbooks/warewulf-head.yaml
+ansible-playbook -v playbooks/container-rocky.yaml
+ansible-playbook -v playbooks/nodes.yaml
+```

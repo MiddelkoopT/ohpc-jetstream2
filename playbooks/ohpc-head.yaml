@@ -135,6 +135,9 @@
         wwctl profile set -y default --netdev=default --nettagadd=DNS=${dns_servers}
         touch /root/head.stamp
 
+        ## Create a test user
+        useradd --create-home --shell=/bin/bash --user-group auser
+
       args:
         creates: /root/head.stamp
 
@@ -148,7 +151,7 @@
 
         sms_ip=10.5.0.8
 
-        wwctl container exec rocky-9 /bin/bash <<EOF
+        wwctl container exec rocky-9 --syncuser /bin/bash <<EOF
         export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
 
         dnf install -y dnf-plugins-core
@@ -176,16 +179,15 @@
         dnf clean all
         EOF
 
-        wwctl container syncuser rocky-9 --write
-
+        ## Configure image munge
         wwctl overlay mkdir generic --mode 0700 /etc/munge
         wwctl overlay import generic /etc/munge/munge.key
         wwctl overlay chown generic /etc/munge/munge.key $(id -u munge) $(id -g munge)
         wwctl overlay chown generic /etc/munge $(id -u munge) $(id -g munge)
 
-        useradd --create-home --shell=/bin/bash --user-group auser
-        wwctl container syncuser rocky-9 --write
-        wwctl overlay build
+        ## Set as default container and set kernel args
+        wwctl profile set --yes default --container rocky-9
+        wwctl profile set --yes default --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238"
 
         touch /root/configure-node-image.stamp
 

@@ -7,7 +7,7 @@
       ansible.builtin.shell:
         executable: /bin/bash
         cmd: |
-          IMAGE_NAME={{ image_name }}
+          set -e
 
           for I in {1..4} ; do
             IP=10.5.1.$I
@@ -19,12 +19,9 @@
             if [[ "${MAC}" != "null" ]] ; then
               echo $IP $NODE $MAC
               wwctl node add $NODE
-              wwctl node set -y --container $IMAGE_NAME $NODE
               wwctl node set -y --ipaddr $IP --hwaddr $MAC $NODE
             fi
           done
-
-          wwctl node set --yes --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238" 'c[1-4]'
 
           wwctl overlay build
           wwctl configure --all

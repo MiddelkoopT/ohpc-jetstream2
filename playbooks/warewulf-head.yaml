@@ -82,7 +82,7 @@
           INFODIR=/usr/share/info \
           DOCDIR=/usr/share/doc \
           SRVDIR=/var/lib \
-          TFTPDIR=/srv/tftp \
+          TFTPDIR=/var/lib/tftpboot/ \
           SYSTEMDDIR=/usr/lib/systemd/system \
           BASHCOMPDIR=/etc/bash_completion.d/ \
           FIREWALLDDIR=/usr/lib/firewalld/services \
@@ -99,12 +99,6 @@
         dest: /etc/warewulf/warewulf.conf
         mode: "600"
 
-    - name: WW4 defaults.conf
-      ansible.builtin.template:
-        src: templates/defaults.conf.j2
-        dest: /etc/warewulf/defaults.conf
-        mode: "600"
-
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
@@ -112,128 +106,56 @@
 
         ## Config
         sms_name=head
+        sms_ip=10.5.0.8
+        internal_netmask=255.255.0.0
+        ipv4_gateway=10.5.0.1
+        dns_servers=8.8.8.8
 
-        ## Warewulf
+        ## Start Warewulf
+        systemctl enable --now warewulfd
         wwctl configure --all
-        wwctl configure hostfile
-        wwctl configure ssh
-        wwctl configure nfs
+        systemctl status warewulfd
+
+        ## Munge
+        create-munge-key
+        wwctl overlay mkdir wwinit --mode 0700 /etc/munge
+        wwctl overlay import wwinit /etc/munge/munge.key
+        wwctl overlay chown wwinit /etc/munge/munge.key $(id -u munge) $(id -g munge)
+        wwctl overlay chown wwinit /etc/munge $(id -u munge) $(id -g munge)
 
         ## Slurm
-        # Use /etc/warewulf/examples/slurm.conf.ww - templated.... (do it the warewulf way)
-        cp -v /usr/share/doc/slurmd/examples/slurm.conf.simple /etc/slurm/slurm.conf
-
-        perl -pi -e "s/^SlurmctldHost=.*/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
+        sed -i "s/^SlurmctldHost=.*/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
         grep '^SlurmctldHost=' /etc/slurm/slurm.conf
 
-        perl -pi -e 's/^NodeName=.*$/NodeName=c[0-4] State=UNKNOWN/' /etc/slurm/slurm.conf
+        sed -i 's/^NodeName=.*$/NodeName=c[1-4] State=UNKNOWN/' /etc/slurm/slurm.conf
         grep '^NodeName' /etc/slurm/slurm.conf
 
-        perl -pi -e 's/^PartitionName=.*$/PartitionName=normal Nodes=c[0-4] Default=YES/' /etc/slurm/slurm.conf
+        sed -i 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/' /etc/slurm/slurm.conf
         grep '^PartitionName' /etc/slurm/slurm.conf
 
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf || echo 'SlurmctldParameters=enable_configless' >> /etc/slurm/slurm.conf
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf
 
-        ## Start head node services
-        systemctl enable --now warewulfd
-        systemctl enable --now munge
-        systemctl enable --now slurmctld
+        ## Set hostsname to ${sms_name} in hosts.ww template
+        sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/hosts/rootfs/etc/hosts.ww
+        sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/host/rootfs/etc/hosts.ww
 
         ## Configure warewulf default profile for network
-        wwctl profile set -y default --netmask 255.255.0.0
+        wwctl profile set -y default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
+        wwctl profile set -y default --netdev=default --nettagadd=DNS=${dns_servers}
 
-        ## Configure boot
-        cp -v /usr/lib/ipxe/snponly.efi /srv/tftp/warewulf/ipxe-snponly-x86_64.efi
+        # FIXME: BUG: dhcpd template does not set next-server
+        echo "next-server ${sms_ip};" >> /var/lib/warewulf/overlays/host/rootfs/etc/dhcpd.conf.ww
 
-        touch /root/head.stamp
+        ## Start slurm
+        systemctl enable --now munge
+        systemctl status munge
 
-      args:
-        creates: /root/head.stamp
+        systemctl enable --now slurmctld
+        systemctl status slurmctld
 
-- name: Setup compute nodes
-  hosts: head
-  become: true
-  tasks:
-    - name: Generate compute node image
-      ansible.builtin.shell: |
-        set -e
-        sms_ip=10.5.0.8
-
-        ## Import node image
-        wwctl container import docker://registry.docker.com/library/ubuntu:24.04 ubuntu-24.04
-        wwctl container syncuser ubuntu-24.04 --write # set head uid/gid in container before install
-        wwctl overlay build
-
-        ## Build and configure node
-        wwctl container exec ubuntu-24.04 /bin/bash <<EOF
-
-        ## Update image
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update
-        apt-get install --yes apt-utils
-        apt-get dist-upgrade --yes
-
-        ## Configure Image
-        passwd -d root # allow serial console login
-
-        ## Install kernel
-        apt-get install --yes --no-install-recommends linux-image-generic linux-tools-generic
-        rm -v /initrd.img* /vmlinuz*
-
-        ## Install base packages
-        apt-get install --yes --no-install-recommends curl jq zstd cpio procps iproute2 busybox-static
-        apt-get install --yes --no-install-recommends init udev dbus polkitd
-        apt-get install --yes --no-install-recommends systemd-timesyncd systemd-resolved
-        apt-get install --yes --no-install-recommends openssh-server python3
-        apt-get install --yes less vim
-
-        ## Network
-        systemctl enable systemd-networkd
-        cat > /etc/systemd/network/en.network <<CONF
-        [Match]
-        Name=en*
-
-        [Network]
-        DHCP=yes
-        LinkLocalAddressing=ipv6
-        CONF
-
-        wwctl overlay mkdir wwinit /etc/systemd/network
-        wwctl overlay import wwinit en.network /etc/systemd/network/en.network
-
-        mount -t devpts devpts /dev/pts ## workarround
-        install -dv --mode=700 --owner=munge --group=munge /etc/munge
-        touch /etc/munge/munge.key ## blank file will be replace with the overlay (bypass container install error)
-        apt-get install --yes munge
-        systemctl enable munge
-        umount /dev/pts ## workarround
-
-        apt-get install --yes slurmd
-        echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/default/slurmd
-        systemctl enable slurmd
-
-        apt-get install --yes lmod
-
-        ## Cleanup
-        apt-get clean
-
-        echo "exit container"
-        EOF
-
-        ## fix init hack
-        perl -pi -e 's/#!\/bin\/sh/\/bin\/bash/' /var/lib/warewulf/overlays/wwinit/rootfs/init
-
-        wwctl overlay mkdir generic --mode 0700 /etc/munge
-        wwctl overlay import generic /etc/munge/munge.key
-        wwctl overlay chown generic /etc/munge/munge.key $(id -u munge) $(id -g munge)
-        wwctl overlay chown generic /etc/munge $(id -u munge) $(id -g munge)
-
-        useradd --create-home --shell=/bin/bash --user-group auser
-        wwctl container syncuser ubuntu-24.04 --write --build
-        wwctl overlay build
-
-        touch /root/configure-node-image.stamp
+        ## Create a test user
+        useradd --create-home --shell=/bin/bash --user-group test
 
       args:
-        creates: /root/configure-node-image.stamp
+        creates: /var/run/slurm/slurmctld.pid
