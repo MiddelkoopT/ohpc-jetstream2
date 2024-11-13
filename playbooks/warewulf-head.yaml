@@ -71,7 +71,8 @@
         set -e
 
         cd /usr/src
-        git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
+        #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
+        git clone https://github.com/warewulf/warewulf.git
         cd warewulf
         make clean defaults \
           PREFIX=/usr \
