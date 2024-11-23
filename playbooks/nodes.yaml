@@ -15,7 +15,7 @@
             MAC=""
             ping -q -c 1 -W 0.2 $IP > /dev/null || /bin/true
             MAC=$(ip -json neigh | jq -r ".[] | select(.dst == \"${IP}\").lladdr")
-            wwctl node delete -y $NODE
+            wwctl node delete -y $NODE || /bin/true
             if [[ "${MAC}" != "null" ]] ; then
               echo $IP $NODE $MAC
               wwctl node add $NODE
@@ -27,7 +27,7 @@
           wwctl configure --all
 
           ## Nodes show up in /etc/hosts after `wwctl configure --all`
-          scontrol reconfig
+          scontrol reconfigure
           sinfo
 
           touch /root/add-nodes.stamp

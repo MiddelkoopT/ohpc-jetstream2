@@ -232,3 +232,21 @@ ansible-playbook -v playbooks/warewulf-head.yaml
 ansible-playbook -v playbooks/container-rocky.yaml
 ansible-playbook -v playbooks/nodes.yaml
 ```
+
+## Ubuntu Images
+
+local.tfvars
+```ini
+head_image = "Featured-Minimal-Ubuntu24"
+head_user = "ubuntu"
+```
+
+```bash
+./create.sh
+OHPC_IP=$(tofu output -raw ohpc_ipv6)
+while ! ssh ubuntu@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
+ansible-playbook -v playbooks/system-ubuntu.yaml
+ansible-playbook -v playbooks/warewulf-head.yaml
+ansible-playbook -v playbooks/container-ubuntu.yaml
+ansible-playbook -v playbooks/nodes.yaml
+```

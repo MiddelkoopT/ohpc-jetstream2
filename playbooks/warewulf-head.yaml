@@ -29,6 +29,7 @@
 
     - name: Install base packages (dnf)
       ansible.builtin.dnf:
+        allowerasing: true
         name:
           - ca-certificates
           - epel-release
@@ -71,8 +72,10 @@
         set -e
 
         cd /usr/src
-        #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
         git clone https://github.com/warewulf/warewulf.git
+        #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
+        #git clone --branch PersistenInstall https://github.com/mslacken/warewulf.git
+
         cd warewulf
         make clean defaults \
           PREFIX=/usr \
@@ -119,19 +122,34 @@
         sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
         sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
 
+        ## Debian/Ubuntu changes
+        if grep -q '^ID_LIKE=debian' /etc/os-release ; then
+          sed -i "s/systemd name: dhcpd/systemd name: isc-dhcp-server/" /etc/warewulf/warewulf.conf
+          sed -i "s:/usr/share/ipxe:/usr/lib/ipxe:" /etc/warewulf/warewulf.conf
+          sed -i "\:arm64-efi/snponly.efi:d" /etc/warewulf/warewulf.conf
+          sed -i "s:ipxe-snponly-x86_64.efi:snponly.efi:" /etc/warewulf/warewulf.conf
+          sed -i "s/systemd name: tftp$/systemd name: tftpd-hpa/" /etc/warewulf/warewulf.conf
+          sed -i "s:/var/lib/tftpboot/:/srv/tftp/:" /etc/warewulf/warewulf.conf
+        fi
+
         ## Start Warewulf
         systemctl enable --now warewulfd
         wwctl configure --all
         systemctl status warewulfd
 
         ## Munge
-        create-munge-key
+        if [ ! -r /etc/munge/munge.key ] ; then
+          create-munge-key
+        fi
         wwctl overlay mkdir wwinit --mode 0700 /etc/munge
         wwctl overlay import wwinit /etc/munge/munge.key
         wwctl overlay chown wwinit /etc/munge/munge.key $(id -u munge) $(id -g munge)
         wwctl overlay chown wwinit /etc/munge $(id -u munge) $(id -g munge)
 
         ## Slurm
+        if [ ! -r /etc/slurm/slurm.conf ] ; then
+          cp -v /usr/share/doc/slurmctld/examples/slurm.conf.simple /etc/slurm/slurm.conf
+        fi
         sed -i "s/^SlurmctldHost=.*/SlurmctldHost=${sms_name}/" /etc/slurm/slurm.conf
         grep '^SlurmctldHost=' /etc/slurm/slurm.conf
 
@@ -149,8 +167,7 @@
         sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/host/rootfs/etc/hosts.ww
 
         ## Configure warewulf default profile for network
-        wwctl profile set -y default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
-        wwctl profile set -y default --netname default --netdev eth0
+        wwctl profile set --yes default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
 
         ## Start slurm
         systemctl enable --now munge
