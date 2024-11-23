@@ -149,8 +149,8 @@
         sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/host/rootfs/etc/hosts.ww
 
         ## Configure warewulf default profile for network
-        wwctl profile set -y default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
-        wwctl profile set -y default --netname default --netdev=default --nettagadd=DNS=${dns_servers}
+        wwctl profile set -y default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
+        wwctl profile set -y default --netname default --netdev eth0
 
         ## Start slurm
         systemctl enable --now munge

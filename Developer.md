@@ -97,8 +97,10 @@ ibnodes
 
 Run from a base Rocky image and use `head_image = "Rocky-9-GenericCloud-Base"` in `local.tf`
 ```bash
+openstack image delete Rocky-9-GenericCloud-Base
 wget -c https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
 openstack image create --disk-format qcow2 --file Rocky-9-GenericCloud-Base.latest.x86_64.qcow2 --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 Rocky-9-GenericCloud-Base
+openstack image show Rocky-9-GenericCloud-Base
 ```
 
 ### OBS

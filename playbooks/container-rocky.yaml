@@ -14,13 +14,66 @@
         ## Config
         sms_ip=10.5.0.8
 
-        ## Import node image
-        wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
-        wwctl container syncuser rocky-9 --write # get uid/gid in before install
+        ## Import node image from Warewulf
+        #wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
 
-        ## Build container - note: heredoc
+        ## Build node image almost the same as Warewulf (Test Rocky 9.5 images)
+        # https://github.com/warewulf/warewulf-node-images/blob/main/rockylinux-9/Containerfile
+
+        wwctl container import docker://docker.io/rockylinux/rockylinux:9 rocky-9
         wwctl container exec --syncuser rocky-9 /bin/bash <<-EOF
+          set -e
+
+          ## Mirror
           export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+
+          dnf update -y \
+              && dnf install -y --allowerasing \
+                coreutils \
+                cpio \
+                dhclient \
+                e2fsprogs \
+                ethtool \
+                findutils \
+                initscripts \
+                ipmitool \
+                iproute \
+                kernel-core \
+                kernel-modules \
+                net-tools \
+                NetworkManager \
+                nfs-utils \
+                openssh-clients \
+                openssh-server \
+                pciutils \
+                psmisc \
+                rsync \
+                rsyslog \
+                strace \
+                wget \
+                which \
+                words \
+              && dnf clean all
+
+          # FIXME: Bugfix: upgrade of 'filesystem' sets '/' to -w
+          chmod -v u+w / afs boot root
+
+          install -v -dp /etc/warewulf
+          ## note the tabs in the file.
+          tee /etc/warewulf/excludes <<-EXCLUDES
+        /boot/
+        /usr/share/GeoIP
+        EXCLUDES
+        EOF
+
+        ## Build container
+        wwctl container syncuser rocky-9 --write # get uid/gid in before install
+        wwctl container exec --syncuser rocky-9 /bin/bash <<-EOF
+          set -e
+
+          ## Mirror
+          export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+
           ## Debug
           passwd -d root # allow serial console login
 
@@ -28,7 +81,7 @@
           dnf install -y dnf-plugins-core
           dnf config-manager --set-enabled crb
           dnf install -y epel-release
-          dnf install -y python3 ca-certificates procps wget curl unzip jq
+          dnf install -y --allowerasing python3 ca-certificates procps wget curl unzip jq
 
           ## Update Image
           dnf upgrade -y
@@ -41,6 +94,7 @@
 
           systemctl enable munge
           systemctl enable slurmd
+          systemctl add-wants default.target slurmd.service
 
           ## Configure node
           echo "server ${sms_ip} iburst" >> /etc/chrony.conf
@@ -55,7 +109,7 @@
 
         ## Set profile
         wwctl profile set --yes default --container rocky-9
-        wwctl profile set --yes default --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238"
+        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 root=tmpfs selinux=0 crashkernel=no systemd.log_color=0"
 
       args:
         creates: /var/lib/warewulf/provision/container/rocky-9.img.gz
