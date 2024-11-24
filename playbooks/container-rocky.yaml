@@ -21,7 +21,8 @@
         # https://github.com/warewulf/warewulf-node-images/blob/main/rockylinux-9/Containerfile
 
         wwctl container import docker://docker.io/rockylinux/rockylinux:9 rocky-9
-        wwctl container exec --syncuser rocky-9 /bin/bash <<EOF
+        wwctl container syncuser rocky-9 --write # get uid/gid in before install
+        wwctl container exec rocky-9 /bin/bash <<EOF
           set -e
 
           ## Mirror
@@ -65,11 +66,11 @@
         /boot/
         /usr/share/GeoIP
         EXCLUDES
-        EOF
+        # EOF
 
-        ## Build container
-        wwctl container syncuser rocky-9 --write # get uid/gid in before install
-        wwctl container exec --syncuser rocky-9 /bin/bash <<EOF
+        # ## Build container
+        # wwctl container syncuser rocky-9 --write # get uid/gid in before install
+        # wwctl container exec rocky-9 /bin/bash <<EOF
           set -e
 
           ## Mirror
@@ -95,7 +96,6 @@
 
           systemctl enable munge
           systemctl enable slurmd
-          systemctl add-wants default.target slurmd.service
 
           ## Configure node
           echo "server ${sms_ip} iburst" >> /etc/chrony.conf
@@ -110,7 +110,7 @@
 
         ## Set profile
         wwctl profile set --yes default --container rocky-9
-        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 crashkernel=no systemd.log_color=0 vga=791"
+        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 crashkernel=no systemd.log_color=0"
         wwctl profile set --yes default --netname default --netdev eth0
 
       args:

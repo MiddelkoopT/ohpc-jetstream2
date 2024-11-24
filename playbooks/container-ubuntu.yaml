@@ -63,7 +63,7 @@
 
         ## Set profile
         wwctl profile set --yes default --container ubuntu-24.04
-        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 root=tmpfs selinux=0 crashkernel=no systemd.log_color=0 vga=791"
+        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 crashkernel=no systemd.log_color=0"
         wwctl profile set --yes default --netname default --netdev en0
 
       args:
