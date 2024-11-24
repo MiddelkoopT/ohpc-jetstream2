@@ -11,6 +11,12 @@ export all_proxy=socks5h://127.0.0.1:8180
 scontrol update nodename=c1 state=RESUME
 ```
 
+Connect to the serial port directly.
+```bash
+websocat -b $(openstack console url show -f json --serial c1 | jq -r .url)
+(stty raw ; websocat -b $(openstack console url show -f json --serial c1 |jq -r .url) ; stty sane)
+```
+
 ## Chameleon
 https://www.chameleoncloud.org/
 
