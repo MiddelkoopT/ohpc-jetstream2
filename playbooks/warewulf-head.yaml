@@ -130,6 +130,8 @@
           sed -i "s:ipxe-snponly-x86_64.efi:snponly.efi:" /etc/warewulf/warewulf.conf
           sed -i "s/systemd name: tftp$/systemd name: tftpd-hpa/" /etc/warewulf/warewulf.conf
           sed -i "s:/var/lib/tftpboot/:/srv/tftp/:" /etc/warewulf/warewulf.conf
+          sed -i "s/systemd name: rsyncd$/systemd name: rsync/" /etc/warewulf/warewulf.conf
+          touch /etc/rsyncd.conf
         fi
 
         ## Start Warewulf
