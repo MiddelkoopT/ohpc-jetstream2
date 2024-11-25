@@ -16,10 +16,10 @@
             ping -q -c 1 -W 0.2 $IP > /dev/null || /bin/true
             MAC=$(ip -json neigh | jq -r ".[] | select(.dst == \"${IP}\").lladdr")
             wwctl node delete -y $NODE || /bin/true
+            echo $IP $NODE $MAC
+            wwctl node add $NODE --netname default --ipaddr $IP
             if [[ "${MAC}" != "null" ]] ; then
-              echo $IP $NODE $MAC
-              wwctl node add $NODE
-              wwctl node set --yes --netname default --ipaddr $IP --hwaddr $MAC $NODE
+              wwctl node set --yes --hwaddr $MAC $NODE
             fi
           done
 
