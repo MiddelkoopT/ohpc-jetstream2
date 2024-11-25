@@ -13,6 +13,11 @@ variable "openstack_subnet_pool_shared_ipv6" {
     type = string
 }
 
+variable "openstack_projects_domain" {
+    type = string
+    default = "projects.jetstream-cloud.org"
+}
+
 variable "head_image" {
     type = string
     default = "Featured-RockyLinux9"

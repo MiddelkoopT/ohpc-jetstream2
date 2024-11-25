@@ -1,6 +1,14 @@
 provider "openstack" {
 }
 
+## Project
+
+data "openstack_identity_auth_scope_v3" "ohpc" {
+  name = "ohpc-scope"
+}
+
+## Networking
+
 resource "openstack_networking_network_v2" "ohpc-external" {
   name = "ohpc-vpc-external"
   admin_state_up = "true"
@@ -203,24 +211,68 @@ resource "openstack_compute_instance_v2" "node" {
   security_groups = [openstack_networking_secgroup_v2.ohpc-internal.name]
 }
 
-## Ouptput
+## Computed locals
+
+locals {
+  ohpc_domain = "${data.openstack_identity_auth_scope_v3.ohpc.project_name}.${var.openstack_projects_domain}"
+  ohpc_ipv4 = openstack_networking_floatingip_v2.ohpc.address
+  ohpc_ipv6 = openstack_networking_port_v2.ohpc-external.all_fixed_ips[1]
+}
+
+## DNS
+
+data "openstack_dns_zone_v2" "ohpc" {
+  name = "${local.ohpc_domain}."
+}
+
+resource "openstack_dns_recordset_v2" "ohpc_ipv4" {
+  zone_id     = data.openstack_dns_zone_v2.ohpc.id
+  name        = "ohpc-${openstack_compute_instance_v2.ohpc.name}.${data.openstack_dns_zone_v2.ohpc.name}"
+  ttl         = 600
+  type        = "A"
+  records     = [local.ohpc_ipv4]
+}
+
+resource "openstack_dns_recordset_v2" "ohpc_ipv6" {
+  zone_id     = data.openstack_dns_zone_v2.ohpc.id
+  name        = "ohpc-${openstack_compute_instance_v2.ohpc.name}.${data.openstack_dns_zone_v2.ohpc.name}"
+  ttl         = 600
+  type        = "AAAA"
+  records     = [local.ohpc_ipv6]
+}
+
+## Local data
 
 resource "local_file" "ansible" {
   filename = "local.ini"
   content = <<-EOF
     ## auto-generated
     [ohpc]
-    head ansible_host=${openstack_networking_port_v2.ohpc-external.all_fixed_ips[1]} ansible_user=${var.head_user} arch=x86_64
+    head ansible_host=${local.ohpc_ipv6} ansible_user=${var.head_user} arch=x86_64
 
     [ohpc:vars]
     sshkey=${var.ssh_public_key}
     EOF
 }
 
+## Output
+
+output "ohpc_project" {
+  value = data.openstack_identity_auth_scope_v3.ohpc.project_name
+}
+
 output "ohpc_ipv4" {
-  value = openstack_networking_floatingip_v2.ohpc.address
+  value = local.ohpc_ipv4
 }
 
 output "ohpc_ipv6" {
-  value = openstack_networking_port_v2.ohpc-external.all_fixed_ips[1]
+  value = local.ohpc_ipv6
+}
+
+output "ohpc_user" {
+  value = var.head_user
+}
+
+output "ohpc_dns" {
+  value = "ohpc-${openstack_compute_instance_v2.ohpc.name}.${local.ohpc_domain}"
 }
