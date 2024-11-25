@@ -157,6 +157,10 @@
         dnf config-manager --set-enabled crb
         dnf install -y epel-release
 
+        # FIXME: Bugfix: upgrade or install of 'filesystem' sets '/' to -w
+        dnf install -y filesystem
+        chmod -v u+w / afs boot root
+
         dnf upgrade -y
         dnf install -y install kernel
         passwd -d root # allow serial console login
@@ -186,7 +190,7 @@
 
         ## Set as default container and set kernel args
         wwctl profile set --yes default --container rocky-9
-        wwctl profile set --yes default --kernelargs="crashkernel=no vga=791 net.naming-scheme=v238"
+        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 systemd.log_color=0 crashkernel=no vga=791 selinux=0"
 
         touch /root/configure-node-image.stamp
 

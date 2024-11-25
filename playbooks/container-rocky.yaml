@@ -28,6 +28,10 @@
           ## Mirror
           export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
 
+          # FIXME: Bugfix: upgrade or install of 'filesystem' sets '/' to -w
+          dnf install -y filesystem
+          chmod -v u+w / afs boot root
+
           dnf update -y \
               && dnf install -y --allowerasing \
                 coreutils \
@@ -54,11 +58,10 @@
                 wget \
                 which \
                 words \
-              && dnf remove -y selinux-policy \
               && dnf clean all
 
-          # FIXME: Bugfix: upgrade of 'filesystem' sets '/' to -w
-          chmod -v u+w / afs boot root
+          ## FIXME: remove selinux-policy brought in by systemd
+          dnf remove -y selinux-policy
 
           install -v -dp /etc/warewulf
           ## note the tabs in the file.

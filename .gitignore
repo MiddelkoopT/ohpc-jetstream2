@@ -11,3 +11,5 @@ local*.ini
 /disk.img-*
 /.venv/
 /.ipynb_checkpoints/
+boot.log
+Untitiled*
