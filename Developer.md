@@ -191,39 +191,19 @@ internal_network=10.5.0.0/16
 
 ## JupyterBook
 
-### Remote bash kernel
 
-Install Jupyter locally
+Setup local Jupyter notebook
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-
-python3 -m pip install pip --upgrade
-python3 -m pip install --upgrade jupyterlab
-python3 -m pip install --upgrade bash_kernel
-python3 -m bash_kernel.install
-python3 -m pip install --upgrade jupyterlab-spellchecker
-python3 -m pip install remote-kernel
+./jupyter-lab.sh
 ```
 
-Install bash_kernel on remote
+After Jupyter is installed, setup remote kernel. 
+This will create/overwrite a new temporary ssh key without password (`~/.ssh/id_ohpc`) to ssh into the node as root.
+
 ```bash
-sudo dnf install -y python3-pip
-sudo python3 -m pip install pip --upgrade
-sudo python3 -m pip install --upgrade bash_kernel
-sudo python3 -m bash_kernel.install
+./jupyter-remote.sh
 ```
 
-Configure locally the remote kernel (key must be rsa and have no passphrase)
-```bash
-python -m remote_kernel install -t rocky@head -i ~/.ssh/id_dev --kernel 'python3 -m bash_kernel'
-jupyter kernelspec list
-```
-
-Run Jupyter locally
-```bash
-jupyter-lab --port=8081
-```
 ## Warewulf Build
 
 Run Warewulf
