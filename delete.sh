@@ -14,4 +14,9 @@ if [[ -n "${OHPC_IP6}" ]] ; then
   ssh-keygen -R $OHPC_IP6
 fi
 
+OHPC_DNS=$(tofu output -raw ohpc_dns)
+if [[ -n "${OHPC_DNS}" ]] ; then
+  ssh-keygen -R $OHPC_DNS
+fi
+
 tofu destroy -auto-approve -var-file=local.tfvars

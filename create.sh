@@ -17,4 +17,9 @@ if [[ -n "${OHPC_IP6}" ]] ; then
   ssh-keygen -R $OHPC_IP6
 fi
 
-echo "=== create.sh ${OHPC_IP4} ${OHPC_IP6}"
+OHPC_DNS=$(tofu output -raw ohpc_dns)
+if [[ -n "${OHPC_DNS}" ]] ; then
+  ssh-keygen -R $OHPC_DNS
+fi
+
+echo "=== create.sh ${OHPC_IP4} ${OHPC_IP6} ${OHPC_DNS}"
