@@ -157,10 +157,6 @@
         dnf config-manager --set-enabled crb
         dnf install -y epel-release
 
-        # FIXME: Bugfix: upgrade or install of 'filesystem' sets '/' to -w
-        dnf install -y filesystem
-        chmod -v u+w / afs boot root
-
         dnf upgrade -y
         dnf install -y install kernel
         passwd -d root # allow serial console login

@@ -217,6 +217,7 @@ locals {
   ohpc_domain = "${data.openstack_identity_auth_scope_v3.ohpc.project_name}.${var.openstack_projects_domain}"
   ohpc_ipv4 = openstack_networking_floatingip_v2.ohpc.address
   ohpc_ipv6 = openstack_networking_port_v2.ohpc-external.all_fixed_ips[1]
+  ohpc_dns = "ohpc-${openstack_compute_instance_v2.ohpc.name}.${local.ohpc_domain}"
 }
 
 ## DNS
@@ -248,7 +249,7 @@ resource "local_file" "ansible" {
   content = <<-EOF
     ## auto-generated
     [ohpc]
-    head ansible_host=${local.ohpc_ipv6} ansible_user=${var.head_user} arch=x86_64
+    head ansible_host=${local.ohpc_dns} ansible_user=${var.head_user} arch=x86_64
 
     [ohpc:vars]
     sshkey=${var.ssh_public_key}
@@ -269,10 +270,10 @@ output "ohpc_ipv6" {
   value = local.ohpc_ipv6
 }
 
-output "ohpc_user" {
-  value = var.head_user
+output "ohpc_dns" {
+  value = local.ohpc_dns
 }
 
-output "ohpc_dns" {
-  value = "ohpc-${openstack_compute_instance_v2.ohpc.name}.${local.ohpc_domain}"
+output "ohpc_user" {
+  value = var.head_user
 }
