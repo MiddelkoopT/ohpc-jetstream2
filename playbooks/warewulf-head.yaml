@@ -73,6 +73,7 @@
 
         cd /usr/src
         git clone https://github.com/warewulf/warewulf.git
+        #git clone --branch v4.6.x https://github.com/warewulf/warewulf.git
         #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
         #git clone --branch PersistenInstall https://github.com/mslacken/warewulf.git
 

@@ -15,65 +15,10 @@
         sms_ip=10.5.0.8
 
         ## Import node image from Warewulf
-        #wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
-
-        ## Build node image almost the same as Warewulf (Test Rocky 9.5 images)
-        # https://github.com/warewulf/warewulf-node-images/blob/main/rockylinux-9/Containerfile
-
-        wwctl container import docker://docker.io/rockylinux/rockylinux:9 rocky-9
+        wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
         wwctl container syncuser rocky-9 --write # get uid/gid in before install
+
         wwctl container exec rocky-9 /bin/bash <<EOF
-          set -e
-
-          ## Mirror
-          export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
-
-          # FIXME: Bugfix: upgrade or install of 'filesystem' sets '/' to -w
-          dnf install -y filesystem
-          chmod -v u+w / afs boot root
-
-          dnf update -y \
-              && dnf install -y --allowerasing \
-                coreutils \
-                cpio \
-                dhclient \
-                e2fsprogs \
-                ethtool \
-                findutils \
-                initscripts \
-                ipmitool \
-                iproute \
-                kernel-core \
-                kernel-modules \
-                net-tools \
-                NetworkManager \
-                nfs-utils \
-                openssh-clients \
-                openssh-server \
-                pciutils \
-                psmisc \
-                rsync \
-                rsyslog \
-                strace \
-                wget \
-                which \
-                words \
-              && dnf clean all
-
-          ## FIXME: remove selinux-policy brought in by systemd
-          dnf remove -y selinux-policy
-
-          install -v -dp /etc/warewulf
-          ## note the tabs in the file.
-          tee /etc/warewulf/excludes <<EXCLUDES
-        /boot/
-        /usr/share/GeoIP
-        EXCLUDES
-        # EOF
-
-        # ## Build container
-        # wwctl container syncuser rocky-9 --write # get uid/gid in before install
-        # wwctl container exec rocky-9 /bin/bash <<EOF
           set -e
 
           ## Mirror
