@@ -186,7 +186,7 @@
 
         ## Set as default container and set kernel args
         wwctl profile set --yes default --container rocky-9
-        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 systemd.log_color=0 crashkernel=no vga=791 selinux=0"
+        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 systemd.log_color=0 crashkernel=no vga=791"
 
         touch /root/configure-node-image.stamp
 
