@@ -66,16 +66,26 @@
         state: restarted
       when: chrony_conf.changed
 
+    - name: Install Warewulf from packages
+      when: false
+      # noqa: command-instead-of-module
+      ansible.builtin.shell: |
+        set -e
+
+        dnf install https://github.com/warewulf/warewulf/releases/download/v4.6.0rc1/warewulf-4.6.0rc1-1.el9.x86_64.rpm
+
+      args:
+        creates: /usr/bin/wwctl
+
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
 
         cd /usr/src
-        git clone https://github.com/warewulf/warewulf.git
+        #git clone https://github.com/warewulf/warewulf.git
+        git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
         #git clone --branch v4.6.x https://github.com/warewulf/warewulf.git
-        #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
-        #git clone --branch PersistenInstall https://github.com/mslacken/warewulf.git
 
         cd warewulf
         make clean defaults \
@@ -135,6 +145,9 @@
           touch /etc/rsyncd.conf
         fi
 
+        ## Configure profiles and overlays
+        wwctl profile add nodes --profile default --comment "Nodes profile"
+
         ## Start Warewulf
         systemctl enable --now warewulfd
         wwctl configure --all
@@ -144,10 +157,11 @@
         if [ ! -r /etc/munge/munge.key ] ; then
           create-munge-key
         fi
-        wwctl overlay mkdir wwinit --mode 0700 /etc/munge
-        wwctl overlay import wwinit /etc/munge/munge.key
-        wwctl overlay chown wwinit /etc/munge/munge.key $(id -u munge) $(id -g munge)
-        wwctl overlay chown wwinit /etc/munge $(id -u munge) $(id -g munge)
+        wwctl overlay create munge
+        wwctl overlay mkdir munge --mode 0700 /etc/munge
+        wwctl overlay import munge /etc/munge/munge.key
+        wwctl overlay chown munge /etc/munge/munge.key $(id -u munge) $(id -g munge)
+        wwctl overlay chown munge /etc/munge $(id -u munge) $(id -g munge)
 
         ## Slurm
         if [ ! -r /etc/slurm/slurm.conf ] ; then
@@ -165,12 +179,15 @@
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf || echo 'SlurmctldParameters=enable_configless' >> /etc/slurm/slurm.conf
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf
 
-        ## Set hostsname to ${sms_name} in hosts.ww template
-        sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/hosts/rootfs/etc/hosts.ww
-        sed -i "s/warewulf/${sms_name}/" /var/lib/warewulf/overlays/host/rootfs/etc/hosts.ww
+        ## Set hostname to ${sms_name} in hosts.ww overlays
+        sed -i "s/warewulf/${sms_name}/" /usr/share/warewulf/overlays/hosts/rootfs/etc/hosts.ww
+        sed -i "s/warewulf/${sms_name}/" /usr/share/warewulf/overlays/host/rootfs/etc/hosts.ww
 
-        ## Configure warewulf default profile for network
-        wwctl profile set --yes default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
+        ## Configure warewulf nodes profile for network
+        wwctl profile set --yes nodes --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
+
+        ## Add new overlays to nodes profile
+        wwctl profile set -y nodes --wwinit munge
 
         ## Start slurm
         systemctl enable --now munge

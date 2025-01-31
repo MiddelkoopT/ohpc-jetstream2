@@ -17,7 +17,7 @@
             MAC=$(ip -json neigh | jq -r ".[] | select(.dst == \"${IP}\").lladdr")
             wwctl node delete -y $NODE || /bin/true
             echo $IP $NODE $MAC
-            wwctl node add $NODE --netname default --ipaddr $IP
+            wwctl node add $NODE --profile nodes --netname default --ipaddr $IP
             if [[ "${MAC}" != "null" ]] ; then
               wwctl node set --yes --hwaddr $MAC $NODE
             fi
