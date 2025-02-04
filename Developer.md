@@ -227,9 +227,8 @@ ansible-playbook -v playbooks/nodes.yaml
 Run Warewulf
 ```bash
 ./create.sh
-OHPC_DNS=$(tofu output -raw ohpc_ipv6)
+OHPC_DNS=$(tofu output -raw ohpc_dns)
 while ! ssh rocky@$OHPC_DNS hostname ; do echo . ; sleep .2 ; done
-ssh rocky@$OHPC_DNS sudo dnf clean all
 ansible-playbook -v playbooks/system-rocky.yaml
 
 ansible-playbook -v playbooks/warewulf-head.yaml
