@@ -204,21 +204,6 @@ This will create/overwrite a new temporary ssh key without password (`~/.ssh/id_
 ./jupyter-remote.sh
 ```
 
-## Warewulf Build
-
-Run Warewulf
-```bash
-./create.sh
-OHPC_IP=$(tofu output -raw ohpc_ipv6)
-while ! ssh rocky@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
-ssh rocky@$OHPC_IP sudo dnf clean all
-ansible-playbook -v playbooks/system-rocky.yaml
-
-ansible-playbook -v playbooks/warewulf-head.yaml
-ansible-playbook -v playbooks/container-rocky.yaml
-ansible-playbook -v playbooks/nodes.yaml
-```
-
 ## Ubuntu Images
 
 local.tfvars
@@ -229,10 +214,25 @@ head_user = "ubuntu"
 
 ```bash
 ./create.sh
-OHPC_IP=$(tofu output -raw ohpc_ipv6)
-while ! ssh ubuntu@$OHPC_IP hostname ; do echo . ; sleep .2 ; done
+OHPC_DNS=$(tofu output -raw ohpc_dns)
+while ! ssh ubuntu@$OHPC_DNS hostname ; do echo . ; sleep .2 ; done
 ansible-playbook -v playbooks/system-ubuntu.yaml
 ansible-playbook -v playbooks/warewulf-head.yaml
 ansible-playbook -v playbooks/container-ubuntu.yaml
+ansible-playbook -v playbooks/nodes.yaml
+```
+
+## Warewulf Build
+
+Run Warewulf
+```bash
+./create.sh
+OHPC_DNS=$(tofu output -raw ohpc_ipv6)
+while ! ssh rocky@$OHPC_DNS hostname ; do echo . ; sleep .2 ; done
+ssh rocky@$OHPC_DNS sudo dnf clean all
+ansible-playbook -v playbooks/system-rocky.yaml
+
+ansible-playbook -v playbooks/warewulf-head.yaml
+ansible-playbook -v playbooks/container-rocky.yaml
 ansible-playbook -v playbooks/nodes.yaml
 ```
