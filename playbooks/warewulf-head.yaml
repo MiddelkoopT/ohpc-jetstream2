@@ -10,6 +10,7 @@
           - git
           - curl
           - jq
+          - bash-completion
       when: ansible_pkg_mgr == "apt"
 
     - name: Install Warewulf dependencies (apt)
@@ -36,6 +37,7 @@
           - git
           - curl
           - jq
+          - bash-completion
       when: ansible_pkg_mgr == "dnf"
 
     - name: Install Warewulf build dependencies (dnf)
@@ -66,26 +68,25 @@
         state: restarted
       when: chrony_conf.changed
 
-    - name: Install Warewulf from packages
-      when: false
+    - name: Install Warewulf from package
+      when: not warewulf_build
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
-
-        dnf install https://github.com/warewulf/warewulf/releases/download/v4.6.0rc1/warewulf-4.6.0rc1-1.el9.x86_64.rpm
-
+        dnf install https://github.com/warewulf/warewulf/releases/download/{{ warewulf_version }}/warewulf-4.6.0rc1-1.el9.x86_64.rpm
       args:
         creates: /usr/bin/wwctl
 
     - name: Build Warewulf from source
+      when: warewulf_build
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
 
         cd /usr/src
-        #git clone https://github.com/warewulf/warewulf.git
-        git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
+        git clone https://github.com/warewulf/warewulf.git
         #git clone --branch v4.6.x https://github.com/warewulf/warewulf.git
+        #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
 
         cd warewulf
         make clean defaults \
@@ -106,6 +107,7 @@
           WWCLIENTDIR=/warewulf
         make all
         make install
+        wwctl completion bash > /etc/bash_completion.d/wwctl
 
       args:
         creates: /usr/bin/wwctl
@@ -116,7 +118,7 @@
         set -e
 
         ## Config
-        sms_name=head
+        sms_name=$(hostname)
         sms_ip=10.5.0.8
         internal_network=10.5.0.0
         internal_netmask=255.255.0.0
@@ -178,10 +180,6 @@
 
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf || echo 'SlurmctldParameters=enable_configless' >> /etc/slurm/slurm.conf
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf
-
-        ## Set hostname to ${sms_name} in hosts.ww overlays
-        sed -i "s/warewulf/${sms_name}/" /usr/share/warewulf/overlays/hosts/rootfs/etc/hosts.ww
-        sed -i "s/warewulf/${sms_name}/" /usr/share/warewulf/overlays/host/rootfs/etc/hosts.ww
 
         ## Configure warewulf nodes profile for network
         wwctl profile set --yes nodes --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
