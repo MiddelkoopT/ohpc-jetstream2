@@ -1,5 +1,5 @@
 - name: Test Playbook
-  hosts: head
+  hosts: localhost
   tasks:
     - name: Ping
       ansible.builtin.ping:
@@ -9,5 +9,5 @@
         path: test.json
         create: true
         mode: '0600'
-        line: '"{{ warewulf_build }}"'
-      when: not warewulf_build
+        line: '"{{ warewulf_rpm }}"'
+      when: not warewulf_ohpc

@@ -64,10 +64,18 @@
           - jq
           - mtools
 
-    - name: Install Warewulf (RPM)
+    - name: Install Warewulf (OHPC)
+      when: not warewulf_release
       ansible.builtin.dnf:
         name:
           - warewulf-ohpc
+
+    - name: Install Warewulf (Direct)
+      when: warewulf_release
+      ansible.builtin.dnf:
+        name:
+          - "{{ warewulf_rpm }}"
+        disable_gpg_check: true
 
     - name: Add head localnet to chrony
       ansible.builtin.lineinfile:
@@ -101,13 +109,9 @@
         sed -i "s/^netmask:.*/netmask: ${internal_netmask}/" /etc/warewulf/warewulf.conf
         sed -i "s/network:.*/network: ${internal_network}/" /etc/warewulf/warewulf.conf
         sed -i "s/template: default/template: static/" /etc/warewulf/warewulf.conf
-        #grep -q "template: static" /etc/warewulf/warewulf.conf || sed -i '/^dhcp:/a\  template: static' /etc/warewulf/warewulf.conf
         sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
         sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
         sed -i "s/mount: false/mount: true/" /etc/warewulf/warewulf.conf
-
-        # FIXME: Bug dhcpd template does not set next-server
-        echo "next-server ${sms_ip};" >> /srv/warewulf/overlays/host/rootfs/etc/dhcpd.conf.ww
 
         ## Warewulf
         wwctl configure --all
@@ -129,13 +133,16 @@
         wwctl container import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
         wwctl container syncuser rocky-9 --write # get uid/gid in before install
 
-        ## Configure warewulf default profile for network
-        wwctl profile set -y default --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway}
-        wwctl profile set -y default --netname default --nettagadd=DNS=${dns_servers}
-        touch /root/head.stamp
+        ## Create "nodes" profile and inherit settings from the "default" profile
+        wwctl profile add nodes --profile default --comment "Nodes profile"
+
+        ## Configure "default" network (netname) for "nodes" profile
+        wwctl profile set --yes nodes --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
 
         ## Create a test user
         useradd --create-home --shell=/bin/bash --user-group auser
+
+        touch /root/head.stamp
 
       args:
         creates: /root/head.stamp
@@ -178,15 +185,19 @@
         dnf clean all
         EOF
 
-        ## Configure image munge
-        wwctl overlay mkdir generic --mode 0700 /etc/munge
-        wwctl overlay import generic /etc/munge/munge.key
-        wwctl overlay chown generic /etc/munge/munge.key $(id -u munge) $(id -g munge)
-        wwctl overlay chown generic /etc/munge $(id -u munge) $(id -g munge)
+        ## Create node munge overlay
+        wwctl overlay create munge
+        wwctl overlay mkdir munge --mode 0700 /etc/munge
+        wwctl overlay import munge /etc/munge/munge.key
+        wwctl overlay chown munge /etc/munge/munge.key $(id -u munge) $(id -g munge)
+        wwctl overlay chown munge /etc/munge $(id -u munge) $(id -g munge)
+
+        ## Add munge to nodes
+        wwctl profile set --yes nodes --wwinit munge
 
         ## Set as default container and set kernel args
-        wwctl profile set --yes default --container rocky-9
-        wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 systemd.log_color=0 crashkernel=no vga=791"
+        wwctl profile set --yes nodes --container rocky-9
+        wwctl profile set --yes nodes --kernelargs='console=tty0,"console=ttyS0,115200",systemd.log_color=0,crashkernel=no,vga=791'
 
         touch /root/configure-node-image.stamp
 

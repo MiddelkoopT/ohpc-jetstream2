@@ -73,7 +73,7 @@
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
-        dnf install https://github.com/warewulf/warewulf/releases/download/{{ warewulf_version }}/warewulf-4.6.0rc1-1.el9.x86_64.rpm
+        dnf install {{ warewulf_rpm }}
       args:
         creates: /usr/bin/wwctl
 
