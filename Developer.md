@@ -136,7 +136,7 @@ unalias cp mv rm
 export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky
 
 ntp_server=pool.ntp.org
-sms_name=head
+sms_name=head.novalocal
 sms_ip=10.5.0.8
 sms_eth_internal=eth1
 internal_netmask=255.255.0.0
@@ -190,7 +190,6 @@ internal_network=10.5.0.0/16
 ```
 
 ## JupyterBook
-
 
 Setup local Jupyter notebook
 ```bash
