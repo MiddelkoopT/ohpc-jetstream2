@@ -1,4 +1,4 @@
-- name: Build Ubuntu Container
+- name: Build Ubuntu Image
   hosts: head
   become: true
   tasks:
@@ -10,11 +10,11 @@
         sms_ip=10.5.0.8
 
         ## Import node image
-        wwctl container import docker://registry.docker.com/library/ubuntu:24.04 ubuntu-24.04
-        wwctl container syncuser ubuntu-24.04 --write # set head uid/gid in container before install
+        wwctl image import docker://registry.docker.com/library/ubuntu:24.04 ubuntu-24.04
+        wwctl image syncuser ubuntu-24.04 --write # set head uid/gid in image before install
 
         ## Build and configure node
-        wwctl container exec --syncuser ubuntu-24.04 /bin/bash <<EOF
+        wwctl image exec --syncuser ubuntu-24.04 /bin/bash <<EOF
           set -e
 
           ## Debug
@@ -43,7 +43,7 @@
           ## Munge
           mount -t devpts devpts /dev/pts ## FIXME: workarround
           install -dv --mode=700 --owner=munge --group=munge /etc/munge
-          touch /etc/munge/munge.key ## blank file will be replace with the overlay (bypass container install error)
+          touch /etc/munge/munge.key ## blank file will be replace with the overlay (bypass image install error)
           apt-get install --yes munge
           systemctl enable munge
           umount /dev/pts ## workarround
@@ -58,13 +58,13 @@
 
           ## Cleanup and exit
           apt-get clean
-          echo "exit container"
+          echo "exit image"
         EOF
 
         ## Set profile
-        wwctl profile set --yes default --container ubuntu-24.04
+        wwctl profile set --yes default --image ubuntu-24.04
         wwctl profile set --yes default --kernelargs="console=tty0 console=ttyS0,115200 crashkernel=no systemd.log_color=0"
         wwctl profile set --yes default --netname default --netdev en0
 
       args:
-        creates: /var/lib/warewulf/provision/container/ubuntu-24.04.img.gz
+        creates: /var/lib/warewulf/provision/image/ubuntu-24.04.img.gz

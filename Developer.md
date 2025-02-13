@@ -217,7 +217,7 @@ OHPC_DNS=$(tofu output -raw ohpc_dns)
 while ! ssh ubuntu@$OHPC_DNS hostname ; do echo . ; sleep .2 ; done
 ansible-playbook -v playbooks/system-ubuntu.yaml
 ansible-playbook -v playbooks/warewulf-head.yaml
-ansible-playbook -v playbooks/container-ubuntu.yaml
+ansible-playbook -v playbooks/image-ubuntu.yaml
 ansible-playbook -v playbooks/nodes.yaml
 ```
 
@@ -231,6 +231,6 @@ while ! ssh rocky@$OHPC_DNS hostname ; do echo . ; sleep .2 ; done
 ansible-playbook -v playbooks/system-rocky.yaml
 
 ansible-playbook -v playbooks/warewulf-head.yaml
-ansible-playbook -v playbooks/container-rocky.yaml
+ansible-playbook -v playbooks/image-rocky.yaml
 ansible-playbook -v playbooks/nodes.yaml
 ```

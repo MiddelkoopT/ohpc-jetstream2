@@ -13,11 +13,9 @@
           - bash-completion
       when: ansible_pkg_mgr == "apt"
 
-    - name: Install Warewulf dependencies (apt)
+    - name: Install cluster packages (apt)
       ansible.builtin.apt:
         name:
-          - unzip
-          - golang
           - chrony
           - isc-dhcp-server
           - tftpd-hpa
@@ -26,7 +24,17 @@
           - slurmd
           - slurmctld
           - openmpi-bin
-      when: ansible_pkg_mgr == "apt"
+      when:
+        - ansible_pkg_mgr == "apt"
+
+    - name: Install Warewulf build dependencies (apt)
+      ansible.builtin.apt:
+        name:
+          - unzip
+          - golang
+      when:
+        - ansible_pkg_mgr == "apt"
+        - warewulf_build
 
     - name: Install base packages (dnf)
       ansible.builtin.dnf:
@@ -40,11 +48,9 @@
           - bash-completion
       when: ansible_pkg_mgr == "dnf"
 
-    - name: Install Warewulf build dependencies (dnf)
+    - name: Install packages (dnf)
       ansible.builtin.dnf:
         name:
-          - unzip
-          - golang
           - chrony
           - dhcp-server
           - tftp-server
@@ -52,7 +58,17 @@
           - ipxe-bootimgs-aarch64
           - slurm-slurmd
           - slurm-slurmctld
-      when: ansible_pkg_mgr == "dnf"
+      when:
+        - ansible_pkg_mgr == "dnf"
+
+    - name: Install Warewulf build dependencies (dnf)
+      ansible.builtin.dnf:
+        name:
+          - unzip
+          - golang
+      when:
+        - ansible_pkg_mgr == "dnf"
+        - warewulf_build
 
     - name: Add head localnet to chrony
       ansible.builtin.lineinfile:
