@@ -97,7 +97,7 @@ ibnodes
 
 ```
 
-## Documentation
+## OHPC Documentation
 
 ### Rocky 9 clean image
 
@@ -163,7 +163,7 @@ done
 echo ${c_mac[@]}
 
 # Local: Enable dev (use for 3.x branch/Warewulf 4.5)
-dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.2:/Factory/EL_9/
+#dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.2:/Factory/EL_9/
 
 # 3.1 Enable OpenHPC repository (not in recipe.sh)
 dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
@@ -177,6 +177,9 @@ sed -i 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/' /et
 ## Remainder of recipe.sh
 
 ```
+
+### Update Notes
+  * test nfs / - broken for now (needs resources in node.conf)
 
 ## HPC Ecosystems Lab 3.0
 
