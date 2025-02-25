@@ -237,3 +237,47 @@ ansible-playbook -v playbooks/warewulf-head.yaml
 ansible-playbook -v playbooks/image-rocky.yaml
 ansible-playbook -v playbooks/nodes.yaml
 ```
+
+## OpenHPC build
+
+Notes
+```bash
+cd components
+sudo dnf builddep -y --define "_sourcedir $PWD" provisioning/warewulf/SPECS/warewulf.spec
+rpmbuild --define "_sourcedir $PWD" --define "_disable_source_fetch 0" -ba provisioning/warewulf/SPECS/warewulf.spec
+```
+
+Devcontainer `.devcontainer/devcontainer.json`
+```json
+{
+  "name": "OpenHPC Development",
+  "image": "registry.docker.com/library/rockylinux:9",
+  "remoteUser": "vscode",
+  "onCreateCommand": "sudo dnf install -y dnf-utils && sudo dnf config-manager --set-enabled crb && sudo dnf install -y unzip cpio rpm-build && sudo dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/$HOSTTYPE/ohpc-release-3-1.el9.$HOSTTYPE.rpm",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-vscode.makefile-tools"
+      ]
+    }
+  }
+}
+```
+
+## OpenHPC Upgrade
+
+```bash
+wwctl upgrade nodes --replace-overlays --add-defaults
+wwctl upgrade config
+wwctl configure --all
+wwctl profile create nodes
+wwctl profile set --yes --system-overlays generic nodes
+wwctl profile set --yes --profile nodes default
+wwctl overlay build
+wwctl image build rocky-9.4
+```
