@@ -112,6 +112,7 @@
         sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
         sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
         sed -i "s/mount: false/mount: true/" /etc/warewulf/warewulf.conf
+        sed -i "s/mntops: defaults,noauto,nofail/mntops: defaults,nofail/" /etc/warewulf/nodes.conf
 
         ## Warewulf
         wwctl configure --all
@@ -193,7 +194,7 @@
         wwctl overlay chown munge /etc/munge $(id -u munge) $(id -g munge)
 
         ## Add munge to nodes
-        wwctl profile set --yes nodes --wwinit munge
+        wwctl profile set --yes nodes --system-overlays munge
 
         ## Set as default image and set kernel args
         wwctl profile set --yes nodes --image rocky-9

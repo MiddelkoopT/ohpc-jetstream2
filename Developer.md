@@ -112,7 +112,7 @@ openstack image show Rocky-9-GenericCloud-Base
 ### OBS
 
 OBS binary builds
-* http://obs.openhpc.community:82/OpenHPC3:/3.2:/Factory/EL_9/
+* http://obs.openhpc.community:82/OpenHPC3:/3.2.1:/Factory/EL_9/
 * http://obs.openhpc.community:82/OpenHPC3:/3.x:/Dep:/Release/EL_9/x86_64/ (ohpc-release, ohpc-release-factory)
 
 ### Run a Recipe
@@ -162,11 +162,13 @@ for ((i=0; i<$num_computes; i++)) ; do
 done
 echo ${c_mac[@]}
 
-# Local: Enable dev (use for 3.x branch/Warewulf 4.5)
-#dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.2:/Factory/EL_9/
+# Local: Enable dev
+#dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.2.1:/Factory/EL_9/
 
 # 3.1 Enable OpenHPC repository (not in recipe.sh)
 dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
+
+# Build Warewulf (see below) - Don't reinstall Warewulf in next step.
 
 ## Run "Add baseline OpenHPC" (3.3) and "Add resource management" (3.4)
 
@@ -242,8 +244,14 @@ ansible-playbook -v playbooks/nodes.yaml
 
 Notes
 ```bash
-cd components
-sudo dnf builddep -y --define "_sourcedir $PWD" provisioning/warewulf/SPECS/warewulf.spec
+dnf update -y
+/usr/bin/needs-restarting -r || systemctl reboot
+
+dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
+dnf install -y dnf-utils && sudo dnf config-manager --set-enabled crb && sudo dnf install -y unzip cpio rpm-build git
+git clone -b tm-warewulf-4.6 https://github.com/MiddelkoopT/ohpc.git
+cd ohpc/components
+dnf builddep -y --define "_sourcedir $PWD" provisioning/warewulf/SPECS/warewulf.spec
 rpmbuild --define "_sourcedir $PWD" --define "_disable_source_fetch 0" -ba provisioning/warewulf/SPECS/warewulf.spec
 ```
 

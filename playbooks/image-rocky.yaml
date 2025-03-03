@@ -42,6 +42,7 @@
           ## Install compute node packages
           dnf install -y slurm-slurmd munge chrony
 
+          ## Enable services
           systemctl enable munge
           systemctl enable slurmd
 
