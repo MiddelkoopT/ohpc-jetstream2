@@ -11,6 +11,7 @@
     - name: Prep base systems
       ansible.builtin.dnf:
         name:
+          - yum-utils # AlmaLinux
           - dnf-plugins-core
           - python3-pip
 

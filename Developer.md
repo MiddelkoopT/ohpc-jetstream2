@@ -99,13 +99,19 @@ ibnodes
 
 ## OHPC Documentation
 
+Docs build dep (Rocky)
+```bash
+sudo dnf install -y git epel-release
+sudo dnf install -y make latexmk texlive-collection-latexrecommended texlive-multirow texlive-tcolorbox
+```
+
 ### Rocky 9 clean image
 
 Run from a base Rocky image and use `head_image = "Rocky-9-GenericCloud-Base"` in `local.tf`
 ```bash
 openstack image delete Rocky-9-GenericCloud-Base
 wget -c https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
-openstack image create --disk-format qcow2 --file Rocky-9-GenericCloud-Base.latest.x86_64.qcow2 --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 Rocky-9-GenericCloud-Base
+openstack image create --progress --disk-format qcow2 --file Rocky-9-GenericCloud-Base.latest.x86_64.qcow2 --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 Rocky-9-GenericCloud-Base
 openstack image show Rocky-9-GenericCloud-Base
 ```
 
@@ -289,3 +295,17 @@ wwctl profile set --yes --profile nodes default
 wwctl overlay build
 wwctl image build rocky-9.4
 ```
+
+## AlmaLinux
+
+Run from a base AlmaLinux image and use `head_image = "AlmaLinux-9-GenericCloud" and head_user=almalinux` in `local.tf`
+```bash
+openstack image delete AlmaLinux-9-GenericCloud
+wget -c https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2
+openstack image create --progress --disk-format qcow2 --file AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 AlmaLinux-9-GenericCloud
+openstack image show AlmaLinux-9-GenericCloud
+```
+
+### OHPC Install
+
+ * Add `initscripts-service`
