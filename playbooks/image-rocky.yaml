@@ -16,7 +16,6 @@
 
         ## Import node image from Warewulf
         wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
-        wwctl image syncuser rocky-9 --write # get uid/gid in before install
 
         wwctl image exec rocky-9 /bin/bash <<EOF
           set -e
@@ -39,6 +38,10 @@
           ## Install Kernel
           dnf install -y kernel
 
+          ## Allocate static UID:120 GID:120 for munge
+          groupadd -g 120 munge
+          useradd -u 120 -g 120 -d /run/munge -s /sbin/nologin -c "Runs Uid N Gid Emporium" munge
+
           ## Install compute node packages
           dnf install -y slurm-slurmd munge chrony
 
@@ -59,7 +62,7 @@
 
         ## Set profile
         wwctl profile set --yes nodes --image rocky-9
-        wwctl profile set --yes nodes --kernelargs="console=tty0 console=ttyS0,115200 crashkernel=no systemd.log_color=0"
+        wwctl profile set --yes nodes --kernelargs='"console=tty0","console=ttyS0,115200","crashkernel=no","systemd.log_color=0"'
         wwctl profile set --yes nodes --netname default --netdev eth0
 
       args:

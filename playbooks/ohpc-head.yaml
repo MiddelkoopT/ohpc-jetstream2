@@ -40,6 +40,24 @@
         path: /etc/hosts
         line: "10.5.0.8    head.localdomain head"
 
+    - name: Create munge group with GID 120
+      ansible.builtin.group:
+        name: munge
+        gid: 120
+        system: true
+        state: present
+
+    - name: Create munge user with UID 120
+      ansible.builtin.user:
+        name: munge
+        uid: 120
+        group: munge
+        home: /run/munge
+        shell: /sbin/nologin
+        comment: "Runs Uid N Gid Emporium"
+        system: true
+        state: present
+
     - name: Install OHPC release
       ansible.builtin.dnf:
         name: http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
@@ -63,6 +81,7 @@
           - chrony
           - jq
           - mtools
+          - initscripts-service # AlmaLinux
 
     - name: Install Warewulf (OHPC)
       when: not warewulf_release
@@ -131,8 +150,10 @@
         systemctl enable --now slurmctld
 
         ## Import node image
-        wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
-        wwctl image syncuser rocky-9 --write # get uid/gid in before install
+        #wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
+        wwctl image import docker://ghcr.io/middelkoopt/warewulf-almalinux:9 rocky-9
+
+        #wwctl image syncuser rocky-9 --write # get uid/gid in before install
 
         ## Create "nodes" profile and inherit settings from the "default" profile
         wwctl profile add nodes --profile default --comment "Nodes profile"
@@ -158,8 +179,8 @@
 
         sms_ip=10.5.0.8
 
-        wwctl image exec rocky-9 --syncuser /bin/bash <<EOF
-        export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+        wwctl image exec rocky-9 /bin/bash <<EOF
+        #export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
 
         dnf install -y dnf-plugins-core
         dnf config-manager --set-enabled crb
@@ -168,6 +189,10 @@
         dnf upgrade -y
         dnf install -y install kernel
         passwd -d root # allow serial console login
+
+        ## Allocate static UID:120 GID:120 for munge
+        groupadd -g 120 munge
+        useradd -u 120 -g 120 -d /run/munge -s /sbin/nologin -c "Runs Uid N Gid Emporium" munge
 
         dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
 

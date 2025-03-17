@@ -102,7 +102,13 @@ ibnodes
 Docs build dep (Rocky)
 ```bash
 sudo dnf install -y git epel-release
-sudo dnf install -y make latexmk texlive-collection-latexrecommended texlive-multirow texlive-tcolorbox
+sudo dnf install -y make gawk latexmk texlive-collection-latexrecommended texlive-multirow texlive-tcolorbox
+```
+
+Doc build deps (Ubuntu/Debian/Colima)
+```bash
+colima ssh -- sudo apt install --yes make gawk latexmk texlive-latex-recommended texlive-latex-extra
+colima ssh make
 ```
 
 ### Rocky 9 clean image
@@ -250,15 +256,16 @@ ansible-playbook -v playbooks/nodes.yaml
 
 Notes
 ```bash
-dnf update -y
-/usr/bin/needs-restarting -r || systemctl reboot
+sudo dnf update -y
+/usr/bin/needs-restarting -r || sudo systemctl reboot
 
-dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
-dnf install -y dnf-utils && sudo dnf config-manager --set-enabled crb && sudo dnf install -y unzip cpio rpm-build git
-git clone -b tm-warewulf-4.6 https://github.com/MiddelkoopT/ohpc.git
-cd ohpc/components
-dnf builddep -y --define "_sourcedir $PWD" provisioning/warewulf/SPECS/warewulf.spec
-rpmbuild --define "_sourcedir $PWD" --define "_disable_source_fetch 0" -ba provisioning/warewulf/SPECS/warewulf.spec
+sudo dnf install -y git
+git clone https://github.com/openhpc/ohpc.git source/ohpc
+cd source/ohpc
+
+./tests/ci/prepare-ci-environment.sh
+sudo ./tests/ci/run_build.py $USER ./components/admin/docs/SPECS/docs.spec
+sudo ./tests/ci/run_build.py $USER components/provisioning/warewulf/SPECS/warewulf.spec
 ```
 
 Devcontainer `.devcontainer/devcontainer.json`
