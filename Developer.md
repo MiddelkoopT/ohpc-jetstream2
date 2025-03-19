@@ -2,6 +2,10 @@
 
 Ongoing developer notes.  Don't forget to delete your lease when you are done.
 
+## UID/GID
+On RHEL - `/usr/share/doc/setup/uidgid` contains the static UIG/GID assignments.
+We use 120-129 for OpenHPC as it is free, mainly 120 for munge.
+
 ## Debug
 
 ```bash
@@ -138,8 +142,9 @@ Build notes
 ```bash
 # 0 setup
 #sudo -i
-export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky
+#export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky
 dnf upgrade -y
+dnf install -y yum-utils initscripts-service ## AlmaLinux
 /usr/bin/needs-restarting -r || systemctl reboot
 
 # 1.3 inputs
@@ -174,8 +179,8 @@ for ((i=0; i<$num_computes; i++)) ; do
 done
 echo ${c_mac[@]}
 
-# Local: Enable dev
-#dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.2.1:/Factory/EL_9/
+# Local: Enable dev (3.3)
+dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
 
 # 3.1 Enable OpenHPC repository (not in recipe.sh)
 dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
@@ -265,7 +270,7 @@ cd source/ohpc
 
 ./tests/ci/prepare-ci-environment.sh
 sudo ./tests/ci/run_build.py $USER ./components/admin/docs/SPECS/docs.spec
-sudo ./tests/ci/run_build.py $USER components/provisioning/warewulf/SPECS/warewulf.spec
+sudo ./tests/ci/run_build.py $USER ./components/provisioning/warewulf/SPECS/warewulf.spec
 ```
 
 Devcontainer `.devcontainer/devcontainer.json`
