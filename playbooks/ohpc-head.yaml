@@ -191,8 +191,8 @@
         passwd -d root # allow serial console login
 
         ## Allocate static UID:120 GID:120 for munge
-        groupadd -g 120 munge
-        useradd -u 120 -g 120 -d /run/munge -s /sbin/nologin -c "Runs Uid N Gid Emporium" munge
+        groupadd --system -g 120 munge
+        useradd --system -u 120 -g 120 -d /run/munge -s /sbin/nologin -c "Runs Uid N Gid Emporium" munge
 
         dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
 
