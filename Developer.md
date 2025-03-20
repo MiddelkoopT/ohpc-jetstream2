@@ -125,80 +125,33 @@ openstack image create --progress --disk-format qcow2 --file Rocky-9-GenericClou
 openstack image show Rocky-9-GenericCloud-Base
 ```
 
+### AlmaLinux 9 clean image
+
+Run from a base AlmaLinux image and use `head_image = "AlmaLinux-9-GenericCloud" and head_user=almalinux` in `local.tf`
+```bash
+openstack image delete AlmaLinux-9-GenericCloud
+wget -c https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2
+openstack image create --progress --disk-format qcow2 --file AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 AlmaLinux-9-GenericCloud
+openstack image show AlmaLinux-9-GenericCloud
+```
+
 ### OBS
 
 OBS binary builds
-* http://obs.openhpc.community:82/OpenHPC3:/3.2.1:/Factory/EL_9/
+* http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/ (dev branch)
 * http://obs.openhpc.community:82/OpenHPC3:/3.x:/Dep:/Release/EL_9/x86_64/ (ohpc-release, ohpc-release-factory)
 
 ### Run a Recipe
 
-Generate CI `recipe.sh`
+Generate CI `recipe.sh` in target folder
 ```bash
-../../../../parse_doc.pl steps.tex > recipe.sh 
+../../../../parse_doc.pl steps.tex > recipe.sh
 ```
 
-Build notes
+Run Recipe - may need to be run twice if head node needs reboot on upgrade. e.g.
 ```bash
-# 0 setup
-#sudo -i
-#export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky
-dnf upgrade -y
-dnf install -y yum-utils initscripts-service ## AlmaLinux
-/usr/bin/needs-restarting -r || systemctl reboot
-
-# 1.3 inputs
-#sudo -i
-unalias cp mv rm
-export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky
-
-ntp_server=pool.ntp.org
-sms_name=head.novalocal
-sms_ip=10.5.0.8
-sms_eth_internal=eth1
-internal_netmask=255.255.0.0
-internal_network=10.5.0.0
-ipv4_gateway=10.5.0.1
-dns_servers=8.8.8.8
-compute_prefix=c
-num_computes=1
-c_ip[0]=10.5.1.1
-c_ip[1]=10.5.1.2
-c_ip[2]=10.5.1.3
-c_ip[3]=10.5.1.4
-c_name[0]=c1
-c_name[1]=c2
-c_name[2]=c3
-c_name[3]=c4
-
-## local: Map MAC to IP
-unset c_mac
-for ((i=0; i<$num_computes; i++)) ; do
-  ping -q -c 1 -W 0.2 ${c_ip[$i]}
-  c_mac[$i]=$(ip -json neigh | jq -r ".[] | select(.dst == \"${c_ip[$i]}\").lladdr")
-done
-echo ${c_mac[@]}
-
-# Local: Enable dev (3.3)
-dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
-
-# 3.1 Enable OpenHPC repository (not in recipe.sh)
-dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm
-
-# Build Warewulf (see below) - Don't reinstall Warewulf in next step.
-
-## Run "Add baseline OpenHPC" (3.3) and "Add resource management" (3.4)
-
-# Local: Patch templates for local hardware.
-sed -i 's/^NodeName=.*$/NodeName=c[1-4] State=UNKNOWN/' /etc/slurm/slurm.conf
-sed -i 's/^PartitionName=.*$/PartitionName=normal Nodes=c[1-4] Default=YES/' /etc/slurm/slurm.conf
-
-## Remainder of recipe.sh
-
+./test-recipe-run.sh ~/source/ohpc/docs/recipes/install/almalinux9/x86_64/warewulf4/slurm/recipe.sh
 ```
-
-### Update Notes
-  * test nfs / - broken for now (needs resources in node.conf)
 
 ## HPC Ecosystems Lab 3.0
 
@@ -307,17 +260,3 @@ wwctl profile set --yes --profile nodes default
 wwctl overlay build
 wwctl image build rocky-9.4
 ```
-
-## AlmaLinux
-
-Run from a base AlmaLinux image and use `head_image = "AlmaLinux-9-GenericCloud" and head_user=almalinux` in `local.tf`
-```bash
-openstack image delete AlmaLinux-9-GenericCloud
-wget -c https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2
-openstack image create --progress --disk-format qcow2 --file AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 AlmaLinux-9-GenericCloud
-openstack image show AlmaLinux-9-GenericCloud
-```
-
-### OHPC Install
-
- * Add `initscripts-service`
