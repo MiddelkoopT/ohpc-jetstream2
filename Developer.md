@@ -148,7 +148,6 @@ Generate CI `recipe.sh` in target folder
 ../../../../parse_doc.pl steps.tex > recipe.sh
 ```
 
-Run Recipe - may need to be run twice if head node needs reboot on upgrade. e.g.
 ```bash
 ./test-recipe-run.sh ~/source/ohpc/docs/recipes/install/almalinux9/x86_64/warewulf4/slurm/recipe.sh
 ```
@@ -226,28 +225,6 @@ sudo ./tests/ci/run_build.py $USER ./components/admin/docs/SPECS/docs.spec
 sudo ./tests/ci/run_build.py $USER ./components/provisioning/warewulf/SPECS/warewulf.spec
 ```
 
-Devcontainer `.devcontainer/devcontainer.json`
-```json
-{
-  "name": "OpenHPC Development",
-  "image": "registry.docker.com/library/rockylinux:9",
-  "remoteUser": "vscode",
-  "onCreateCommand": "sudo dnf install -y dnf-utils && sudo dnf config-manager --set-enabled crb && sudo dnf install -y unzip cpio rpm-build && sudo dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/$HOSTTYPE/ohpc-release-3-1.el9.$HOSTTYPE.rpm",
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/git:1": {}
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "golang.go",
-        "ms-vscode.makefile-tools"
-      ]
-    }
-  }
-}
-```
-
 ## OpenHPC Upgrade
 
 ```bash
@@ -259,4 +236,16 @@ wwctl profile set --yes --system-overlays generic nodes
 wwctl profile set --yes --profile nodes default
 wwctl overlay build
 wwctl image build rocky-9.4
+```
+
+## Debug Notes
+
+Random notes during debugging
+
+```bash
+nmcli c modify System\ eth0 ipv4.method shared
+nmcli c up System\ eth0
+
+systemctl list-dependencies remote-fs.target
+systemctl list-dependencies remote-fs-pre.target
 ```

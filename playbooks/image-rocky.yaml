@@ -38,10 +38,6 @@
           ## Install Kernel
           dnf install -y kernel
 
-          ## Allocate static UID:120 GID:120 for munge
-          groupadd --system -g 120 munge
-          useradd --system -u 120 -g 120 -d /run/munge -s /sbin/nologin -c "Runs Uid N Gid Emporium" munge
-
           ## Install compute node packages
           dnf install -y slurm-slurmd munge chrony
 

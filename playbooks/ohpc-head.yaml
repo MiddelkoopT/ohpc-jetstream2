@@ -128,8 +128,7 @@
         sed -i "s/^netmask:.*/netmask: ${internal_netmask}/" /etc/warewulf/warewulf.conf
         sed -i "s/network:.*/network: ${internal_network}/" /etc/warewulf/warewulf.conf
         sed -i "s/template: default/template: static/" /etc/warewulf/warewulf.conf
-        sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
-        sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
+        sed -i "/range start:/d;/range end:/d;" /etc/warewulf/warewulf.conf
         sed -i "s/mount: false/mount: true/" /etc/warewulf/warewulf.conf
         sed -i "s/mntops: defaults,noauto,nofail/mntops: defaults,nofail/" /etc/warewulf/nodes.conf
 
@@ -150,16 +149,13 @@
         systemctl enable --now slurmctld
 
         ## Import node image
-        #wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
-        wwctl image import docker://ghcr.io/middelkoopt/warewulf-almalinux:9 rocky-9
-
-        #wwctl image syncuser rocky-9 --write # get uid/gid in before install
+        wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
 
         ## Create "nodes" profile and inherit settings from the "default" profile
         wwctl profile add nodes --profile default --comment "Nodes profile"
 
         ## Configure "default" network (netname) for "nodes" profile
-        wwctl profile set --yes nodes --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
+        wwctl profile set --yes nodes --netname eth0 --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
 
         ## Create a test user
         useradd --create-home --shell=/bin/bash --user-group auser
@@ -190,10 +186,7 @@
         dnf install -y install kernel
         passwd -d root # allow serial console login
 
-        ## Allocate static UID:120 GID:120 for munge
-        groupadd --system -g 120 munge
-        useradd --system -u 120 -g 120 -d /run/munge -s /sbin/nologin -c "Runs Uid N Gid Emporium" munge
-
+        dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
         dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
 
         dnf install -y ohpc-base-compute hwloc-ohpc
@@ -219,7 +212,7 @@
         wwctl overlay chown munge /etc/munge $(id -u munge) $(id -g munge)
 
         ## Add munge to nodes
-        wwctl profile set --yes nodes --system-overlays munge
+        wwctl profile set --yes nodes --system-overlays munge --runtime-overlays syncuser
 
         ## Set as default image and set kernel args
         wwctl profile set --yes nodes --image rocky-9
