@@ -238,20 +238,7 @@ wwctl overlay build
 wwctl image build rocky-9.4
 ```
 
-## Debug Notes
-
-Random notes during debugging
-
-```bash
-nmcli c modify System\ eth0 ipv4.method shared
-nmcli c up System\ eth0
-
-systemctl list-dependencies remote-fs.target
-systemctl list-dependencies remote-fs-pre.target
-```
-
 ## GPU
-
 
 Check GPU
 ```python
@@ -270,4 +257,16 @@ if torch.cuda.is_available():
     z = x + y  # Perform an operation on GPU
     print("GPU operation successful!")
     print(z)  # Print result to verify
+
+## Debug Notes
+
+Random notes during debugging
+
+```bash
+nmcli c modify System\ eth0 ipv4.method shared
+nmcli c up System\ eth0
+
+systemctl list-dependencies remote-fs.target
+systemctl list-dependencies remote-fs-pre.target
+```
 ```
