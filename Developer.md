@@ -249,3 +249,25 @@ nmcli c up System\ eth0
 systemctl list-dependencies remote-fs.target
 systemctl list-dependencies remote-fs-pre.target
 ```
+
+## GPU
+
+
+Check GPU
+```python
+import torch
+# Check if CUDA is available
+print(f"CUDA available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"CUDA version: {torch.version.cuda}")
+    print(f"Device count: {torch.cuda.device_count()}")
+    print(f"Current device: {torch.cuda.current_device()}")
+    print(f"Device name: {torch.cuda.get_device_name()}")
+    
+    # Actually use the GPU
+    x = torch.rand(5, 3).cuda()
+    y = torch.rand(5, 3).cuda()
+    z = x + y  # Perform an operation on GPU
+    print("GPU operation successful!")
+    print(z)  # Print result to verify
+```

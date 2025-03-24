@@ -1,7 +1,7 @@
 ## Test Recipe Configuration
 # This gets sourced by the recipie.sh by setting OHPC_INPUT_LOCAL
 
-## Head Node Configuration
+## Head node configuration
 ntp_server=pool.ntp.org
 sms_name=head.novalocal
 sms_ip=10.5.0.8
@@ -11,7 +11,10 @@ internal_network=10.5.0.0
 ipv4_gateway=10.5.0.1
 dns_servers=8.8.8.8
 
-## Cluster Configuration
+## Compute node configuration
+eth_provision=eth0
+
+## Cluster configuration
 compute_prefix=c
 num_computes=1
 c_ip[0]=10.5.1.1
@@ -27,6 +30,7 @@ c_name[3]=c4
 provision_wait=1
 update_slurm_nodeconfig=1
 slurm_node_config="NodeName=c[1-4] State=UNKNOWN"
+enable_nvidia_gpu_driver=1
 
 ## Customize slurm.conf
 # sed -i 's/^NodeName=.*$/NodeName=c[1-4] State=UNKNOWN/' /etc/slurm/slurm.conf
