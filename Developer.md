@@ -2,16 +2,11 @@
 
 Ongoing developer notes.  Don't forget to delete your lease when you are done.
 
-## UID/GID
-On RHEL - `/usr/share/doc/setup/uidgid` contains the static UIG/GID assignments.
-We use 120-129 for OpenHPC as it is free, mainly 120 for munge.
-
 ## Debug
 
 ```bash
 openstack console log show c0
 ssh -i ~/.ssh/id_rsa -R 8180 c0
-export all_proxy=socks5h://127.0.0.1:8180
 scontrol update nodename=c1 state=RESUME
 ```
 
@@ -195,23 +190,9 @@ ansible-playbook -v playbooks/image-ubuntu.yaml
 ansible-playbook -v playbooks/nodes.yaml
 ```
 
-## Warewulf Build
-
-Run Warewulf
-```bash
-./create.sh
-OHPC_DNS=$(tofu output -raw ohpc_dns)
-while ! ssh rocky@$OHPC_DNS hostname ; do echo . ; sleep .2 ; done
-ansible-playbook -v playbooks/system-rocky.yaml
-
-ansible-playbook -v playbooks/warewulf-head.yaml
-ansible-playbook -v playbooks/image-rocky.yaml
-ansible-playbook -v playbooks/nodes.yaml
-```
-
 ## OpenHPC build
 
-Notes
+Build Notes
 ```bash
 sudo dnf update -y
 /usr/bin/needs-restarting -r || sudo systemctl reboot
@@ -225,7 +206,7 @@ sudo ./tests/ci/run_build.py $USER ./components/admin/docs/SPECS/docs.spec
 sudo ./tests/ci/run_build.py $USER ./components/provisioning/warewulf/SPECS/warewulf.spec
 ```
 
-## OpenHPC Upgrade
+## Warewulf OpenHPC Upgrade
 
 ```bash
 wwctl upgrade nodes --replace-overlays --add-defaults
@@ -257,6 +238,7 @@ if torch.cuda.is_available():
     z = x + y  # Perform an operation on GPU
     print("GPU operation successful!")
     print(z)  # Print result to verify
+```
 
 ## Debug Notes
 
@@ -268,5 +250,4 @@ nmcli c up System\ eth0
 
 systemctl list-dependencies remote-fs.target
 systemctl list-dependencies remote-fs-pre.target
-```
 ```

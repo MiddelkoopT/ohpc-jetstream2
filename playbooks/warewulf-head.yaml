@@ -85,16 +85,15 @@
       when: chrony_conf.changed
 
     - name: Install Warewulf from package
-      when: not warewulf_build
-      # noqa: command-instead-of-module
-      ansible.builtin.shell: |
-        set -e
-        dnf install -y {{ warewulf_rpm }}
-      args:
-        creates: /usr/bin/wwctl
+      ansible.builtin.dnf:
+        name:
+          - "{{ warewulf_rpm }}"
+        disable_gpg_check: true
+      when:
+        - ansible_pkg_mgr == "dnf"
+        - not warewulf_build
 
     - name: Build Warewulf from source
-      when: warewulf_build
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
         set -e
@@ -127,6 +126,8 @@
 
       args:
         creates: /usr/bin/wwctl
+      when:
+        - warewulf_build
 
     - name: Setup the head node
       # noqa: command-instead-of-module
@@ -164,11 +165,12 @@
         fi
 
         ## Configure profiles and overlays
-        wwctl profile add nodes --profile default --comment "Nodes profile"
+        wwctl profile add nodes --profile=default --comment="Nodes profile"
 
         ## Start Warewulf
         systemctl enable --now warewulfd
         wwctl configure --all
+        bash /etc/profile.d/ssh_setup.sh # configure ssh
         systemctl status warewulfd
 
         ## Munge
@@ -176,7 +178,7 @@
           create-munge-key
         fi
         wwctl overlay create munge
-        wwctl overlay mkdir munge --mode 0700 /etc/munge
+        wwctl overlay mkdir munge --mode=0700 /etc/munge
         wwctl overlay import munge /etc/munge/munge.key
         wwctl overlay chown munge /etc/munge/munge.key $(id -u munge) $(id -g munge)
         wwctl overlay chown munge /etc/munge $(id -u munge) $(id -g munge)
@@ -198,10 +200,10 @@
         grep 'SlurmctldParameters=' /etc/slurm/slurm.conf
 
         ## Configure warewulf nodes profile for network
-        wwctl profile set --yes nodes --netname default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
+        wwctl profile set --yes nodes --netname=default --netmask=${internal_netmask} --gateway=${ipv4_gateway} --nettagadd=DNS=${dns_servers}
 
         ## Add new overlays to nodes profile
-        wwctl profile set -y nodes --wwinit munge
+        wwctl profile set -y nodes --wwinit=munge
 
         ## Start slurm
         systemctl enable --now munge

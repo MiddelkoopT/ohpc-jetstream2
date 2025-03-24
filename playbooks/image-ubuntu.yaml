@@ -62,9 +62,9 @@
         EOF
 
         ## Set profile
-        wwctl profile set --yes default --image ubuntu-24.04
-        wwctl profile set --yes default --kernelargs='console=tty0,"console=ttyS0,115200",crashkernel=no,systemd.log_color=0'
-        wwctl profile set --yes default --netname default --netdev en0
+        wwctl profile set --yes nodes --image=ubuntu-24.04
+        wwctl profile set --yes nodes --kernelargs='console=tty0,"console=ttyS0,115200",crashkernel=no,systemd.log_color=0'
+        wwctl profile set --yes nodes --netname=default --netdev=en0
 
       args:
         creates: /var/lib/warewulf/provision/image/ubuntu-24.04.img.gz

@@ -15,7 +15,7 @@
         sms_ip=10.5.0.8
 
         ## Import node image from Warewulf
-        wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9
+        wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9 --syncuser
 
         wwctl image exec rocky-9 /bin/bash <<EOF
           set -e
@@ -57,9 +57,9 @@
         EOF
 
         ## Set profile
-        wwctl profile set --yes nodes --image rocky-9
-        wwctl profile set --yes nodes --kernelargs='"console=tty0","console=ttyS0,115200","crashkernel=no","systemd.log_color=0"'
-        wwctl profile set --yes nodes --netname default --netdev eth0
+        wwctl profile set --yes nodes --image=rocky-9
+        wwctl profile set --yes nodes --kernelargs='console=tty0,"console=ttyS0,115200",crashkernel=no,systemd.log_color=0'
+        wwctl profile set --yes nodes --netname=default --netdev=eth0
 
       args:
         creates: /var/lib/warewulf/provision/image/rocky-9.img.gz
