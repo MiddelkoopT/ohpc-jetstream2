@@ -46,6 +46,7 @@
           - curl
           - jq
           - bash-completion
+          - initscripts-service # AlmaLinux
       when: ansible_pkg_mgr == "dnf"
 
     - name: Install packages (dnf)
@@ -96,7 +97,7 @@
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
-        set -e
+        set -e -x
 
         cd /usr/src
         git clone https://github.com/warewulf/warewulf.git
@@ -132,7 +133,7 @@
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
-        set -e
+        set -e -x
 
         ## Config
         sms_name=$(hostname)
@@ -165,6 +166,7 @@
         fi
 
         ## Configure profiles and overlays
+        wwctl profile delete --yes nodes || /bin/true
         wwctl profile add nodes --profile=default --comment="Nodes profile"
 
         ## Start Warewulf
@@ -177,6 +179,7 @@
         if [ ! -r /etc/munge/munge.key ] ; then
           create-munge-key
         fi
+        wwctl overlay delete --force munge || /bin/true
         wwctl overlay create munge
         wwctl overlay mkdir munge --mode=0700 /etc/munge
         wwctl overlay import munge /etc/munge/munge.key

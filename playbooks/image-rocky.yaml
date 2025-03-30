@@ -3,7 +3,7 @@
   become: true
   tasks:
 
-- name: Build Rocky Image
+- name: Build Node Image
   hosts: head
   become: true
   tasks:
@@ -13,30 +13,34 @@
 
         ## Config
         sms_ip=10.5.0.8
+        container=docker://ghcr.io/warewulf/warewulf-almalinux:9
+        mirror=https://mirror.usi.edu/pub/almalinux
+        name=almalinux-9
 
         ## Import node image from Warewulf
-        wwctl image import docker://ghcr.io/warewulf/warewulf-rockylinux:9 rocky-9 --syncuser
+        wwctl image delete --yes $name || /bin/true
+        wwctl image import $container $name --syncuser
 
-        wwctl image exec rocky-9 /bin/bash <<EOF
-          set -e
+        wwctl image exec $name /bin/bash <<EOF
+          set -e -x
 
           ## Mirror
-          export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
-
-          ## Debug
-          passwd -d root # allow serial console login
+          export YUM_MIRROR_BASE=$mirror
 
           ## Setup base OS
           dnf install -y dnf-plugins-core
           dnf config-manager --set-enabled crb
           dnf install -y epel-release
-          dnf install -y --allowerasing python3 ca-certificates procps wget curl unzip jq
+          dnf install -y --allowerasing python3 ca-certificates procps wget curl unzip jq passwd
 
           ## Update Image
           dnf upgrade -y
 
           ## Install Kernel
           dnf install -y kernel
+
+          ## Debug
+          passwd -d root # allow serial console login
 
           ## Install compute node packages
           dnf install -y slurm-slurmd munge chrony
@@ -57,9 +61,9 @@
         EOF
 
         ## Set profile
-        wwctl profile set --yes nodes --image=rocky-9
+        wwctl profile set --yes nodes --image=$name
         wwctl profile set --yes nodes --kernelargs='console=tty0,"console=ttyS0,115200",crashkernel=no,systemd.log_color=0'
         wwctl profile set --yes nodes --netname=default --netdev=eth0
 
       args:
-        creates: /var/lib/warewulf/provision/image/rocky-9.img.gz
+        creates: /var/lib/warewulf/provision/image/$name.img.gz

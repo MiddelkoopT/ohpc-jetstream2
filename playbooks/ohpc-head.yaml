@@ -95,7 +95,7 @@
     - name: Setup the head node
       # noqa: command-instead-of-module
       ansible.builtin.shell: |
-        set -e
+        set -e -x
 
         sms_name=head
         sms_ip=10.5.0.8
@@ -160,6 +160,8 @@
         arch=$(uname -m)
 
         wwctl image exec rocky-9 /bin/bash <<EOF
+        set -e -x
+
         #export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
 
         dnf install -y dnf-plugins-core
