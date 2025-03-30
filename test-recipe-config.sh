@@ -27,10 +27,10 @@ c_name[2]=c3
 c_name[3]=c4
 
 ## Testing configuration
+enable_nvidia_gpu_driver=0
 provision_wait=1
 update_slurm_nodeconfig=1
 slurm_node_config="NodeName=c[1-4] State=UNKNOWN"
-enable_nvidia_gpu_driver=1
 
 ## Customize slurm.conf
 # sed -i 's/^NodeName=.*$/NodeName=c[1-4] State=UNKNOWN/' /etc/slurm/slurm.conf
