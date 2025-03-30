@@ -94,7 +94,7 @@
 
     - name: Setup the head node
       # noqa: command-instead-of-module
-      ansible.builtin.shell: |
+      ansible.builtin.shell: |-
         set -e -x
 
         sms_name=head
@@ -153,13 +153,14 @@
   become: true
   tasks:
     - name: Generate compute node image
-      ansible.builtin.shell: |
-        set -e
+      ansible.builtin.shell: |-
+        set -e -x
 
         sms_ip=10.5.0.8
         arch=$(uname -m)
 
-        wwctl image exec rocky-9 /bin/bash <<EOF
+        #### Start Configure Image
+        wwctl image exec rocky-9 /bin/bash << EXEC
         set -e -x
 
         #export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
@@ -169,14 +170,23 @@
         dnf install -y epel-release
 
         dnf upgrade -y
-        dnf install -y install kernel
+        dnf install -y kernel passwd
+
         passwd -d root # allow serial console login
+
+        mkdir -v -p /etc/systemd/system/NetworkManager-wait-online.service.d/
+        tee /etc/systemd/system/NetworkManager-wait-online.service.d/override.conf << EOF
+        [Service]
+        ExecStart=
+        ExecStart=/usr/bin/nm-online -q
+        EOF
 
         dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
         dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/${arch}/ohpc-release-3-1.el9.${arch}.rpm
 
         dnf install -y ohpc-base-compute hwloc-ohpc
         dnf install -y ohpc-slurm-client
+
         systemctl enable munge
 
         dnf install -y chrony
@@ -188,7 +198,8 @@
         dnf install -y lmod-ohpc
 
         dnf clean all
-        EOF
+        EXEC
+        #### End Configure Image
 
         ## Create node munge overlay
         wwctl overlay create munge

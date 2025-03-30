@@ -96,7 +96,7 @@
 
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
-      ansible.builtin.shell: |
+      ansible.builtin.shell: |-
         set -e -x
 
         cd /usr/src
@@ -132,7 +132,7 @@
 
     - name: Setup the head node
       # noqa: command-instead-of-module
-      ansible.builtin.shell: |
+      ansible.builtin.shell: |-
         set -e -x
 
         ## Config

@@ -6,8 +6,8 @@
       # noqa: risky-shell-pipe
       ansible.builtin.shell:
         executable: /bin/bash
-        cmd: |
-          set -e
+        cmd: |-
+          set -e -x
 
           for I in {1..4} ; do
             IP=10.5.1.$I

@@ -8,8 +8,8 @@
   become: true
   tasks:
     - name: Generate compute node image
-      ansible.builtin.shell: |
-        set -e
+      ansible.builtin.shell: |-
+        set -e -x
 
         ## Config
         sms_ip=10.5.0.8
@@ -21,44 +21,55 @@
         wwctl image delete --yes $name || /bin/true
         wwctl image import $container $name --syncuser
 
-        wwctl image exec $name /bin/bash <<EOF
-          set -e -x
+        #### Start Configure Image
+        wwctl image exec $name /bin/bash << EXEC
+        set -e -x
 
-          ## Mirror
-          export YUM_MIRROR_BASE=$mirror
+        ## Mirror
+        export YUM_MIRROR_BASE=$mirror
 
-          ## Setup base OS
-          dnf install -y dnf-plugins-core
-          dnf config-manager --set-enabled crb
-          dnf install -y epel-release
-          dnf install -y --allowerasing python3 ca-certificates procps wget curl unzip jq passwd
+        ## Setup base OS
+        dnf install -y dnf-plugins-core
+        dnf config-manager --set-enabled crb
+        dnf install -y epel-release
+        dnf install -y --allowerasing python3 ca-certificates procps wget curl unzip jq passwd
 
-          ## Update Image
-          dnf upgrade -y
+        ## Update Image
+        dnf upgrade -y
 
-          ## Install Kernel
-          dnf install -y kernel
+        ## Install Kernel
+        dnf install -y kernel
 
-          ## Debug
-          passwd -d root # allow serial console login
-
-          ## Install compute node packages
-          dnf install -y slurm-slurmd munge chrony
-
-          ## Enable services
-          systemctl enable munge
-          systemctl enable slurmd
-
-          ## Configure node
-          echo "server ${sms_ip} iburst" >> /etc/chrony.conf
-          echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/sysconfig/slurmd
-
-          ## Extras
-          dnf install -y Lmod
-
-          ## Cleanup
-          dnf clean all
+        ## Fix NetworkManager to wait for the network to become available
+        mkdir -v -p /etc/systemd/system/NetworkManager-wait-online.service.d/
+        tee /etc/systemd/system/NetworkManager-wait-online.service.d/override.conf << EOF
+        [Service]
+        ExecStart=
+        ExecStart=/usr/bin/nm-online -q
         EOF
+        #### End Configure Image
+
+        ## Debug
+        passwd -d root # allow serial console login
+
+        ## Install compute node packages
+        dnf install -y slurm-slurmd munge chrony
+
+        ## Enable services
+        systemctl enable munge
+        systemctl enable slurmd
+
+        ## Configure node
+        echo "server ${sms_ip} iburst" >> /etc/chrony.conf
+        echo SLURMD_OPTIONS="--conf-server ${sms_ip}" > /etc/sysconfig/slurmd
+
+        ## Extras
+        dnf install -y Lmod
+
+        ## Cleanup
+        dnf clean all
+        EXEC
+        #### End Configure Image
 
         ## Set profile
         wwctl profile set --yes nodes --image=$name
