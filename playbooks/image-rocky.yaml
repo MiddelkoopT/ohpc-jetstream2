@@ -13,9 +13,9 @@
 
         ## Config
         sms_ip=10.5.0.8
-        container=docker://ghcr.io/warewulf/warewulf-almalinux:9
-        mirror=https://mirror.usi.edu/pub/almalinux
-        name=almalinux-9
+        container=docker://ghcr.io/warewulf/warewulf-rockylinux:9
+        mirror=https://mirror.usi.edu/pub/rocky
+        name=rocky-9
 
         ## Import node image from Warewulf
         wwctl image delete --yes $name || /bin/true
