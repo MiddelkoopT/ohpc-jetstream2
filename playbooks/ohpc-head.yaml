@@ -159,11 +159,10 @@
         sms_ip=10.5.0.8
         arch=$(uname -m)
 
-        #### Start Configure Image
+        ## Configure image
         wwctl image exec rocky-9 /bin/bash << EXEC
         set -e -x
-
-        #export YUM_MIRROR_BASE=https://mirror.usi.edu/pub/rocky # optional mirror
+        export LANG=C.UTF-8
 
         dnf install -y dnf-plugins-core
         dnf config-manager --set-enabled crb
@@ -199,7 +198,6 @@
 
         dnf clean all
         EXEC
-        #### End Configure Image
 
         ## Create node munge overlay
         wwctl overlay create munge
