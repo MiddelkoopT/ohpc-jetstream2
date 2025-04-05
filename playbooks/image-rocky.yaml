@@ -14,10 +14,12 @@
 
         ## Config
         sms_ip=10.5.0.8
+        #container=docker://ghcr.io/middelkoopt/warewulf-almalinux:9
         #container=docker://ghcr.io/warewulf/warewulf-rockylinux:9
         container=docker://ghcr.io/warewulf/warewulf-almalinux:9
 
         ## Import node image from container
+        wwctl image delete nodeimage --yes || /bin/true
         wwctl image import $container nodeimage --syncuser
 
         ## Configure profile
@@ -28,6 +30,7 @@
         ## Configure image
         wwctl image exec nodeimage /bin/bash << EXEC
         set -e -x
+        set -o pipefail
 
         ## Setup base OS
         dnf install -y dnf-plugins-core
@@ -39,7 +42,7 @@
         dnf upgrade -y
 
         ## Remove old kernels
-        dnf remove $(dnf repoquery --installonly --latest-limit=-1 -q)
+        dnf repoquery --installonly --latest-limit=-1 -q | xargs dnf remove -y
 
         ## Debug
         passwd -d root # allow serial console login
