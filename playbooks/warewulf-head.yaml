@@ -99,29 +99,21 @@
       ansible.builtin.shell: |-
         set -e -x
 
-        cd /usr/src
-        git clone https://github.com/warewulf/warewulf.git
-        #git clone --branch v4.6.x https://github.com/warewulf/warewulf.git
-        #git clone --branch tm-dev https://github.com/MiddelkoopT/warewulf.git
+        WWVER=v4.6.0
+        WWACCT=warewulf
+        rm -rf /usr/src/warewulf
+        git clone --no-checkout https://github.com/$WWACCT/warewulf.git /usr/src/warewulf
+        cd /usr/src/warewulf
+        git checkout -B $WWVER
 
-        cd warewulf
-        make clean defaults \
+        make clean
+        make config \
           PREFIX=/usr \
-          BINDIR=/usr/bin \
           SYSCONFDIR=/etc \
-          DATADIR=/usr/share \
           LOCALSTATEDIR=/var/lib \
           SHAREDSTATEDIR=/var/lib \
-          MANDIR=/usr/share/man \
-          INFODIR=/usr/share/info \
-          DOCDIR=/usr/share/doc \
-          SRVDIR=/var/lib \
-          TFTPDIR=/var/lib/tftpboot/ \
-          SYSTEMDDIR=/usr/lib/systemd/system \
-          BASHCOMPDIR=/etc/bash_completion.d/ \
-          FIREWALLDDIR=/usr/lib/firewalld/services \
-          WWCLIENTDIR=/warewulf
-        make all
+          TFTPDIR=/var/lib/tftpboot
+        make build
         make install
         wwctl completion bash > /etc/bash_completion.d/wwctl
 
