@@ -10,23 +10,24 @@
     - name: Generate compute node image
       ansible.builtin.shell: |-
         set -e -x
+        export LANG=C.UTF-8
 
         ## Config
         sms_ip=10.5.0.8
-        container=docker://ghcr.io/warewulf/warewulf-rockylinux:9
-        mirror=https://mirror.usi.edu/pub/rocky
-        name=rocky-9
+        #container=docker://ghcr.io/warewulf/warewulf-rockylinux:9
+        container=docker://ghcr.io/warewulf/warewulf-almalinux:9
 
-        ## Import node image from Warewulf
-        wwctl image delete --yes $name || /bin/true
-        wwctl image import $container $name --syncuser
+        ## Import node image from container
+        wwctl image import $container nodeimage --syncuser
 
-        #### Start Configure Image
-        wwctl image exec $name /bin/bash << EXEC
+        ## Configure profile
+        wwctl profile set --yes nodes --image=nodeimage
+        wwctl profile set --yes nodes --kernelargs='console=tty0,"console=ttyS0,115200",crashkernel=no,systemd.log_color=0'
+        wwctl profile set --yes nodes --netname=default --netdev=eth0
+
+        ## Configure image
+        wwctl image exec nodeimage /bin/bash << EXEC
         set -e -x
-
-        ## Mirror
-        export YUM_MIRROR_BASE=$mirror
 
         ## Setup base OS
         dnf install -y dnf-plugins-core
@@ -37,17 +38,8 @@
         ## Update Image
         dnf upgrade -y
 
-        ## Install Kernel
-        dnf install -y kernel
-
-        ## Fix NetworkManager to wait for the network to become available
-        mkdir -v -p /etc/systemd/system/NetworkManager-wait-online.service.d/
-        tee /etc/systemd/system/NetworkManager-wait-online.service.d/override.conf << EOF
-        [Service]
-        ExecStart=
-        ExecStart=/usr/bin/nm-online -q
-        EOF
-        #### End Configure Image
+        ## Remove old kernels
+        dnf remove $(dnf repoquery --installonly --latest-limit=-1 -q)
 
         ## Debug
         passwd -d root # allow serial console login
@@ -69,12 +61,5 @@
         ## Cleanup
         dnf clean all
         EXEC
-        #### End Configure Image
-
-        ## Set profile
-        wwctl profile set --yes nodes --image=$name
-        wwctl profile set --yes nodes --kernelargs='console=tty0,"console=ttyS0,115200",crashkernel=no,systemd.log_color=0'
-        wwctl profile set --yes nodes --netname=default --netdev=eth0
-
       args:
-        creates: /var/lib/warewulf/provision/image/$name.img.gz
+        creates: /var/lib/warewulf/provision/image/nodeimage.img.gz

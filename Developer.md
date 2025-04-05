@@ -1,19 +1,21 @@
 # Developer Notes
 
-Ongoing developer notes.  Don't forget to delete your lease when you are done.
+Ongoing developer notes.
+WARNING: Some of this may be out of date, missing things, or flat out wrong!
+Don't forget to delete your lease when you are done.
 
 ## Debug
 
 ```bash
-openstack console log show c0
-ssh -i ~/.ssh/id_rsa -R 8180 c0
+openstack console log show c1
+ssh -i ~/.ssh/id_rsa -R 8180 c1
 scontrol update nodename=c1 state=RESUME
 ```
 
-Connect to the serial port directly.
+Connect to the serial port directly (second is a full console, including ctl-c).
 ```bash
 websocat -b $(openstack console url show -f json --serial c1 | jq -r .url)
-(stty raw ; websocat -b $(openstack console url show -f json --serial c1 |jq -r .url) ; stty sane)
+(stty raw ; websocat -b $(openstack console url show -f json --serial c1 | jq -r .url) ; stty sane)
 ```
 
 ## Chameleon
@@ -238,6 +240,27 @@ if torch.cuda.is_available():
     z = x + y  # Perform an operation on GPU
     print("GPU operation successful!")
     print(z)  # Print result to verify
+```
+
+## Diskless w/ Dracut
+
+```bash
+
+image=$(wwctl profile list nodes --json |jq -r '.nodes."image name"')
+wwctl image exec $image --build=false -- /usr/bin/mkdir -v /boot
+wwctl image exec $image --build=false -- /usr/bin/dnf -y install https://github.com/warewulf/warewulf/releases/download/v4.6.0/warewulf-dracut-4.6.0-1.el9.noarch.rpm
+wwctl image exec $image -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
+
+wwctl profile set --yes nodes --tagadd IPXEMenuEntry=dracut
+
+```
+
+## Delete
+
+Delete warewulf configuration
+```bash
+wwctl node delete c[1-4] --yes
+wwctl image delete nodeimage --yes
 ```
 
 ## Debug Notes
