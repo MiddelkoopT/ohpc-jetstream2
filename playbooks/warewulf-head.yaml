@@ -88,7 +88,7 @@
     - name: Install Warewulf from package
       ansible.builtin.dnf:
         name:
-          - "{{ warewulf_rpm }}"
+          - "https://github.com/{{ warewulf_rpm_account }}/warewulf/releases/download/v{{ warewulf_rpm_version }}/warewulf-{{ warewulf_rpm_version }}-1.el9.{{ arch }}.rpm"
         disable_gpg_check: true
       when:
         - ansible_pkg_mgr == "dnf"
@@ -96,16 +96,23 @@
 
     - name: Build Warewulf from source
       # noqa: command-instead-of-module
+      environment:
+        WWVERSION:  "{{ warewulf_rpm_version }}"
+        WWACCOUNT:  "{{ warewulf_rpm_account }}"
       ansible.builtin.shell: |-
         set -e -x
 
-        WWVER=v4.6.0
-        WWACCT=warewulf
-        rm -rf /usr/src/warewulf
-        git clone --no-checkout https://github.com/$WWACCT/warewulf.git /usr/src/warewulf
-        cd /usr/src/warewulf
-        git checkout -B $WWVER
+        ## Config
+        : ${WWVERSION:=main}
+        : ${WWACCOUNT:=warewulf}
 
+        ## Clone Warewulf
+        rm -rf /usr/src/warewulf
+        git clone --no-checkout https://github.com/${WWACCOUNT}/warewulf.git /usr/src/warewulf
+        cd /usr/src/warewulf
+        git checkout -B ${WWVERSION}
+
+        ## Build Warewulf
         make clean
         make config \
           PREFIX=/usr \

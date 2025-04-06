@@ -8,15 +8,15 @@
   become: true
   tasks:
     - name: Generate compute node image
+      environment:
+        container: "{{ warewulf_container }}"
       ansible.builtin.shell: |-
         set -e -x
         export LANG=C.UTF-8
 
         ## Config
         sms_ip=10.5.0.8
-        #container=docker://ghcr.io/middelkoopt/warewulf-almalinux:9
-        #container=docker://ghcr.io/warewulf/warewulf-rockylinux:9
-        container=docker://ghcr.io/warewulf/warewulf-almalinux:9
+        : ${container:=docker://ghcr.io/warewulf/warewulf-rockylinux:9}
 
         ## Import node image from container
         wwctl image delete nodeimage --yes || /bin/true
@@ -64,5 +64,6 @@
         ## Cleanup
         dnf clean all
         EXEC
+
       args:
         creates: /var/lib/warewulf/provision/image/nodeimage.img.gz
