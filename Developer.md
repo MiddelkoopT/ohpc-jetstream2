@@ -242,17 +242,36 @@ if torch.cuda.is_available():
     print(z)  # Print result to verify
 ```
 
+## Warewulf Build RPM
+
+```bash
+dnf config-manager --set-enabled crb
+dnf build-dep -y ./warewulf.spec
+
+make spec
+install -Dv ./warewulf-*.tar.gz ~/rpmbuild/SOURCES/
+
+\rm -rf ~/rpmbuild/RPMS
+rpmbuild -bb ./warewulf.spec
+```
+
 ## Diskless w/ Dracut
 
 ```bash
-
 image=$(wwctl profile list nodes --json |jq -r '.nodes."image name"')
-wwctl image exec $image --build=false -- /usr/bin/mkdir -v /boot
-wwctl image exec $image --build=false -- /usr/bin/dnf -y install https://github.com/warewulf/warewulf/releases/download/v4.6.0/warewulf-dracut-4.6.0-1.el9.noarch.rpm
-wwctl image exec $image -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
-
+chroot=$(wwctl image show $image)
 wwctl profile set --yes nodes --tagadd IPXEMenuEntry=dracut
 
+wwctl image exec $image --build=false -- /usr/bin/mkdir -v /boot
+wwctl image exec $image --build=false -- /usr/bin/dnf -y install https://github.com/warewulf/warewulf/releases/download/v4.6.1/warewulf-dracut-4.6.1-1.el9.noarch.rpm
+wwctl image exec $image -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
+```
+
+From local build
+```bash
+install -v ~/rpmbuild/RPMS/noarch/warewulf-dracut-*.noarch.rpm ${chroot}/tmp/warewulf-dracut.rpm
+wwctl image exec $image --build=false -- /usr/bin/dnf install -y /tmp/warewulf-dracut.rpm
+wwctl image exec $image -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
 ```
 
 ## Delete

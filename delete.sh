@@ -2,6 +2,11 @@
 
 echo "=== delete.sh"
 
+if [[ "$(tofu show -json)" == '{"format_version":"1.0"}' ]] ; then
+  echo "--- no resources to destroy"
+  exit 0
+fi
+
 echo "--- removing known-hosts entries"
 
 OHPC_IP4=$(tofu output -raw ohpc_ipv4)

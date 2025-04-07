@@ -161,6 +161,7 @@
 
         ## Configure image
         wwctl image exec rocky-9 /bin/bash << EXEC
+        ## --------------------------------------------------------------------
         set -e -x
         export LANG=C.UTF-8
 
@@ -190,6 +191,7 @@
         dnf install -y lmod-ohpc
 
         dnf clean all
+        ## --------------------------------------------------------------------
         EXEC
 
         ## Create node munge overlay

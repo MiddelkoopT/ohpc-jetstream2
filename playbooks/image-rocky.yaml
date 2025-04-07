@@ -1,8 +1,3 @@
-- name: Configure Warewulf Head Node
-  hosts: head
-  become: true
-  tasks:
-
 - name: Build Node Image
   hosts: head
   become: true
@@ -10,16 +5,21 @@
     - name: Generate compute node image
       environment:
         container: "{{ warewulf_container }}"
+      args:
+        creates: /var/lib/warewulf/provision/images/nodeimage.img.gz
+      register: image_result
       ansible.builtin.shell: |-
         set -e -x
-        export LANG=C.UTF-8
 
         ## Config
         sms_ip=10.5.0.8
         : ${container:=docker://ghcr.io/warewulf/warewulf-rockylinux:9}
 
-        ## Import node image from container
+        ## Remove old image
+        wwctl profile set nodes --yes --image=UNDEF || /bin/true
         wwctl image delete nodeimage --yes || /bin/true
+
+        ## Import node image from container
         wwctl image import $container nodeimage --syncuser
 
         ## Configure profile
@@ -29,8 +29,10 @@
 
         ## Configure image
         wwctl image exec nodeimage /bin/bash << EXEC
+        # --------------------------------------------------------------------
         set -e -x
         set -o pipefail
+        export LANG=C.UTF-8
 
         ## Setup base OS
         dnf install -y dnf-plugins-core
@@ -63,7 +65,20 @@
 
         ## Cleanup
         dnf clean all
+
+        # --------------------------------------------------------------------
         EXEC
 
-      args:
-        creates: /var/lib/warewulf/provision/image/nodeimage.img.gz
+    - name: Configure Dracut
+      when:
+        - warewulf_dracut == True
+        - image_result is changed
+      environment:
+        dracut: "https://github.com/{{ warewulf_rpm_account }}/warewulf/releases/download/v{{ warewulf_rpm_version }}/warewulf-dracut-{{ warewulf_rpm_version }}-1.el9.noarch.rpm"
+      ansible.builtin.shell: |-
+        set -e -x
+
+        wwctl profile set --yes nodes --tagdel IPXEMenuEntry
+        wwctl image exec nodeimage --build=false -- /usr/bin/dnf install -y ${dracut}
+        wwctl image exec nodeimage -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
+        wwctl profile set --yes nodes --tagadd IPXEMenuEntry=dracut
