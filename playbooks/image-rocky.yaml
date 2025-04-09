@@ -64,6 +64,7 @@
         dnf install -y Lmod
 
         ## Cleanup
+        rm -vf /var/lib/warewulf/chroots/rocky-9/rootfs/boot/initramfs-*.img
         dnf clean all
 
         # --------------------------------------------------------------------
@@ -71,10 +72,15 @@
 
     - name: Configure Dracut
       when:
-        - warewulf_dracut == True
+        - warewulf_dracut
         - image_result is changed
       environment:
-        dracut: "https://github.com/{{ warewulf_rpm_account }}/warewulf/releases/download/v{{ warewulf_rpm_version }}/warewulf-dracut-{{ warewulf_rpm_version }}-1.el9.noarch.rpm"
+        dracut:
+          "https://github.com/{{ warewulf_rpm_account }}/warewulf/releases/download/\
+          {{ 'nightly' if warewulf_rpm_nightly else 'v' + warewulf_rpm_version }}/\
+          warewulf-dracut-{{ warewulf_rpm_version }}-1.el9.noarch.rpm"
+      args:
+        creates: /var/lib/warewulf/chroots/rocky-9/rootfs/boot/initramfs-*.img
       ansible.builtin.shell: |-
         set -e -x
 
