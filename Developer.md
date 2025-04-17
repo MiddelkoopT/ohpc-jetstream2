@@ -211,8 +211,8 @@ sudo ./tests/ci/run_build.py $USER ./components/provisioning/warewulf/SPECS/ware
 ## Warewulf OpenHPC Upgrade
 
 ```bash
-wwctl upgrade nodes --replace-overlays --add-defaults
 wwctl upgrade config
+wwctl upgrade nodes --add-defaults --replace-overlays
 wwctl configure --all
 wwctl profile create nodes
 wwctl profile set --yes --system-overlays generic nodes

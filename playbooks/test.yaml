@@ -10,4 +10,4 @@
         create: true
         mode: '0600'
         line: '"{{ warewulf_rpm }}"'
-      when: not warewulf_ohpc
+      when: not ohpc_warewulf

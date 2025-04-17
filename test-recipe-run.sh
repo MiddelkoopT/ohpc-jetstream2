@@ -13,7 +13,6 @@ echo "--- setup head"
 ssh $HEAD sudo bash <<- EOF
   dnf upgrade -y
   dnf install -y yum-utils initscripts-service ## AlmaLinux
-  curl -sL -o /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && chmod +x /usr/bin/yq
   nmcli c modify 'System eth0' ipv4.method shared
   nmcli c up 'System eth0'
   /usr/bin/needs-restarting -r || systemctl reboot

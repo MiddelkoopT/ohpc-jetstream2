@@ -66,16 +66,16 @@
           - initscripts-service # AlmaLinux
 
     - name: Install Warewulf (OHPC)
-      when: warewulf_ohpc
+      when: ohpc_warewulf
       ansible.builtin.dnf:
         name:
           - warewulf-ohpc
 
     - name: Install Warewulf (Direct)
-      when: not warewulf_ohpc
+      when: not ohpc_warewulf
       ansible.builtin.dnf:
         name:
-          - "{{ warewulf_rpm }}"
+          - "{{ ohpc_warewulf_rpm }}"
         disable_gpg_check: true
 
     - name: Add head localnet to chrony
