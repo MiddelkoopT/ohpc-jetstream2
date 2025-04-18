@@ -41,24 +41,24 @@ resource "openstack_networking_subnet_v2" "ohpc-internal-ipv4" {
 resource "openstack_networking_subnet_v2" "ohpc-external-ipv6" {
   name = "ohpc-external-ipv6"
   network_id = openstack_networking_network_v2.ohpc-external.id
-  subnetpool_id = var.openstack_subnet_pool_shared_ipv6
+  subnetpool_id = data.openstack_networking_subnetpool_v2.shared-default-ipv6.id
   ip_version = 6
   ipv6_address_mode = "dhcpv6-stateful"
   ipv6_ra_mode = "dhcpv6-stateful"
 }
 
 resource "openstack_networking_router_interface_v2" "ohpc-external-ipv4" {
-  router_id = var.openstack_router_id
+  router_id = data.openstack_networking_router_v2.auto-allocated-router.id
   subnet_id = openstack_networking_subnet_v2.ohpc-external-ipv4.id
 }
 
 resource "openstack_networking_router_interface_v2" "ohpc-internal-ipv4" {
-  router_id = var.openstack_router_id
+  router_id = data.openstack_networking_router_v2.auto-allocated-router.id
   subnet_id = openstack_networking_subnet_v2.ohpc-internal-ipv4.id
 }
 
 resource "openstack_networking_router_interface_v2" "ohpc-external-ipv6" {
-  router_id = var.openstack_router_id
+  router_id = data.openstack_networking_router_v2.auto-allocated-router.id
   subnet_id = openstack_networking_subnet_v2.ohpc-external-ipv6.id
 }
 

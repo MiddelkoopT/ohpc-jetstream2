@@ -2,22 +2,13 @@
 
 ## Setup
 In the template `local.tfvars` in each platform directory replace `$USER` and `$SSH_KEY`; see `local.tfvars.example`.
-Since there is only one main router - populate the `$ROUTER_ID` and `$SHARED_IVP6` pool variables. This could be automated with `openstack port list --router` and a tofu import (see router docs).
 
-```
+```ini
 username = "$USER"
 ssh_public_key = "$SSH_KEY"
-openstack_router_id = "$ROUTER"
-openstack_subnet_pool_shared_ipv6 = "$SHARED_IPV6"
 ```
 
-Create the EFI image
-Must have the following properties:
-```ini
-hw_firmware_type=uefi
-hw_scsi_model=virtio-scsi
-```
-
+Create the ipxe boot image that chains the Warewulf IPXE
 ```bash
 cd ipxe
 ./ipxe.sh
@@ -27,6 +18,7 @@ openstack image create --disk-format raw --file disk.img --property hw_firmware_
 ## Run
 
 ```bash
+. ./auth-env.sh
 ./create.sh
 ./ohpc-run.sh
 ```

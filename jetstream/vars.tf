@@ -5,14 +5,6 @@ variable "ssh_public_key" {
     type = string
 }
 
-variable "openstack_router_id" {
-    type = string
-}
-
-variable "openstack_subnet_pool_shared_ipv6" {
-    type = string
-}
-
 variable "openstack_projects_domain" {
     type = string
     default = "projects.jetstream-cloud.org"
@@ -42,4 +34,3 @@ variable "node_count" {
     type = number
     default = 1
 }
-

@@ -4,8 +4,7 @@
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
-/ipxe/
-/disk.img
-/disk.img-*
+/ipxe/ipxe/
 local.tf
 local.ini
+*.img
