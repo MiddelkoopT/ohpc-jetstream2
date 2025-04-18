@@ -2,6 +2,7 @@
 
 echo "=== delete.sh"
 
-./remove-knownhosts.sh
+. ./get-env.sh
+. ./remove-knownhosts.sh
 
-tofu destroy -auto-approve -var-file=local.tfvars
+tofu -chdir=${OS_NAME} destroy -auto-approve -var-file=local.tfvars

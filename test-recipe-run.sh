@@ -1,10 +1,9 @@
 #!/bin/bash
 RECIPE=${1:-"recipe.sh"}
+. ./get-env.sh
 
 echo "=== test-recipe-run.sh $RECIPE"
-OHPC_DNS=$(tofu output -raw ohpc_dns)
-OHPC_USER=$(tofu output -raw ohpc_user)
-HEAD="$OHPC_USER@$OHPC_DNS"
+HEAD="$OHPC_USER@$OHPC_HEAD"
 
 echo "--- wait for head $HEAD"
 while ! ssh $HEAD hostname ; do echo . ; sleep .2 ; done
@@ -13,8 +12,6 @@ echo "--- setup head"
 ssh $HEAD sudo bash <<- EOF
   dnf upgrade -y
   dnf install -y yum-utils initscripts-service ## AlmaLinux
-  nmcli c modify 'System eth0' ipv4.method shared
-  nmcli c up 'System eth0'
   /usr/bin/needs-restarting -r || systemctl reboot
 EOF
 
@@ -27,5 +24,4 @@ scp $RECIPE $HEAD:recipe.sh
 ssh $HEAD "sudo OHPC_INPUT_LOCAL=./test-recipe-config.sh bash -x ./recipe.sh"
 
 echo '--- done'
-echo $OHPC_USER@$OHPC_DNS
-
+echo $HEAD

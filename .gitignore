@@ -7,9 +7,6 @@ terraform.tfstate
 terraform.tfstate.backup
 local*.tfvars
 local*.ini
-/ipxe/
-/disk.img
-/disk.img-*
 /.venv/
 /.ipynb_checkpoints/
 boot.log

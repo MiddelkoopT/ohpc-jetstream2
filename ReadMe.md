@@ -1,7 +1,7 @@
 # OpenHPC 3.x, ww4, Rocky9, OpenStack/Jetstream2
 
 ## Setup
-Template `local.tfvars`, replace `$USER` and `$SSH_KEY`
+In the template `local.tfvars` in each platform directory replace `$USER` and `$SSH_KEY`; see `local.tfvars.example`.
 Since there is only one main router - populate the `$ROUTER_ID` and `$SHARED_IVP6` pool variables. This could be automated with `openstack port list --router` and a tofu import (see router docs).
 
 ```
@@ -19,6 +19,7 @@ hw_scsi_model=virtio-scsi
 ```
 
 ```bash
+cd ipxe
 ./ipxe.sh
 openstack image create --disk-format raw --file disk.img --property hw_firmware_type='uefi' --property hw_scsi_model='virtio-scsi' --property hw_machine_type=q35 efi-ipxe
 ```
@@ -27,5 +28,5 @@ openstack image create --disk-format raw --file disk.img --property hw_firmware_
 
 ```bash
 ./create.sh
-./run.sh
+./ohpc-run.sh
 ```

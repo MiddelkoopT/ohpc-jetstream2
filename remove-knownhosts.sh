@@ -1,23 +1,23 @@
 #!/bin/bash
 
-echo "--- remove-knownhosts.sh"
+echo "--- remove-knownhosts.sh ${OS_NAME}"
 
-if [[ "$(tofu show -json)" == '{"format_version":"1.0"}' ]] ; then
+if [[ "$(tofu -chdir=${OS_NAME} show -json)" == '{"format_version":"1.0"}' ]] ; then
   echo "--- no know hosts to remove"
-  exit 0
-fi
+else
+  if [[ -n "${OHPC_IP4}" ]] ; then
+    ssh-keygen -R $OHPC_IP4
+  fi
 
-OHPC_IP4=$(tofu output -raw ohpc_ipv4)
-if [[ -n "${OHPC_IP4}" ]] ; then
-  ssh-keygen -R $OHPC_IP4
-fi
+  if [[ -n "${OHPC_IP6}" ]] ; then
+    ssh-keygen -R $OHPC_IP6
+  fi
 
-OHPC_IP6=$(tofu output -raw ohpc_ipv6)
-if [[ -n "${OHPC_IP6}" ]] ; then
-  ssh-keygen -R $OHPC_IP6
-fi
+  if [[ -n "${OHPC_DNS}" ]] ; then
+    ssh-keygen -R $OHPC_DNS
+  fi
 
-OHPC_DNS=$(tofu output -raw ohpc_dns)
-if [[ -n "${OHPC_DNS}" ]] ; then
-  ssh-keygen -R $OHPC_DNS
+  if [[ -n "${OHPC_HEAD}" ]] ; then
+    ssh-keygen -R $OHPC_HEAD
+  fi
 fi

@@ -258,7 +258,7 @@ rpmbuild -bb ./warewulf.spec
 ## Diskless w/ Dracut
 
 ```bash
-image=$(wwctl profile list nodes --json |jq -r '.nodes."image name"')
+image=$(wwctl profile list nodes --json | jq -r '.nodes."image name"')
 chroot=$(wwctl image show $image)
 wwctl profile set --yes nodes --tagadd IPXEMenuEntry=dracut
 

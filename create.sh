@@ -3,8 +3,9 @@ set -e
 
 echo "=== create.sh"
 
-tofu apply -auto-approve -var-file=local.tfvars
+tofu -chdir=${OS_NAME} apply -auto-approve -var-file=local.tfvars
 
-./remove-knownhosts.sh
+. ./get-env.sh
+. ./remove-knownhosts.sh
 
 echo "=== create.sh ${OHPC_IP4} ${OHPC_IP6} ${OHPC_DNS}"

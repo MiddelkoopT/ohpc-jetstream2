@@ -262,15 +262,19 @@ output "ohpc_project" {
   value = data.openstack_identity_auth_scope_v3.ohpc.project_name
 }
 
-output "ohpc_ipv4" {
+output "ohpc_head_ipv4" {
   value = local.ohpc_ipv4
 }
 
-output "ohpc_ipv6" {
+output "ohpc_head_ipv6" {
   value = local.ohpc_ipv6
 }
 
-output "ohpc_dns" {
+output "ohpc_head_dns" {
+  value = local.ohpc_dns
+}
+
+output "ohpc_head" {
   value = local.ohpc_dns
 }
 
