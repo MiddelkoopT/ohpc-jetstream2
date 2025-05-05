@@ -1,12 +1,6 @@
 provider "openstack" {
 }
 
-## Project
-
-data "openstack_identity_auth_scope_v3" "ohpc" {
-  name = "ohpc-scope"
-}
-
 ## Networking
 
 resource "openstack_networking_network_v2" "ohpc-external" {
