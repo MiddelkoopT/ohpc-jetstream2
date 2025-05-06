@@ -210,14 +210,30 @@ sudo ./tests/ci/run_build.py $USER ./components/provisioning/warewulf/SPECS/ware
 
 ## Warewulf OpenHPC Upgrade
 
+* https://warewulf.org/docs/v4.6.x/server/upgrade.html
 ```bash
+## Warning: This upgrade script is only lightly tested on a plain OpenHPC install.
+## Backup your warewulf.conf and nodes.conf - these should be backed up regularly.
+
+## Upgrade configuration (warewulf.conf, nodes.conf) 
 wwctl upgrade config
-wwctl upgrade nodes --add-defaults --replace-overlays
-wwctl configure --all
+wwctl upgrade nodes --with-warewulfconf=/etc/warewulf/warewulf.conf-old  --add-defaults --replace-overlays
+
+## Verify that NFS mounts got moved over correctly (check resources in nodes.conf)
+
+## Create a new "nodes" profile and include "generic" overlay 
 wwctl profile create nodes
 wwctl profile set --yes --system-overlays generic nodes
 wwctl profile set --yes --profile nodes default
+
+## Reconfig/restart
+wwctl configure --all
 wwctl overlay build
+systemctl restart warewulfd slurmctld
+
+## Upgrade node image
+wwctl image exec --build=false rocky-9.4 -- /usr/bin/dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
+wwctl image exec --build=false rocky-9.4 -- /usr/bin/dnf update -y
 wwctl image build rocky-9.4
 ```
 
