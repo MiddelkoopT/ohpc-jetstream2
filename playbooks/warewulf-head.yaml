@@ -112,7 +112,7 @@
         rm -rf /usr/src/warewulf
         git clone --no-checkout https://github.com/${WWACCOUNT}/warewulf.git /usr/src/warewulf
         cd /usr/src/warewulf
-        git checkout -B v${WWVERSION}
+        git checkout -B ${WWVERSION} origin/${WWVERSION}
 
         ## Build Warewulf
         make clean
@@ -153,6 +153,7 @@
         sed -i "s/template: default/template: static/" /etc/warewulf/warewulf.conf
         sed -i "s/range start:.*/range start: ${dhcp_start}/" /etc/warewulf/warewulf.conf
         sed -i "s/range end:.*/range end: ${dhcp_end}/" /etc/warewulf/warewulf.conf
+        sed -i "/- quiet/d" /etc/warewulf/nodes.conf
 
         ## Debian/Ubuntu changes
         if grep -q '^ID_LIKE=debian' /etc/os-release ; then
