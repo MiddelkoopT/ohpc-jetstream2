@@ -113,6 +113,7 @@
         sed -i "/range start:/d;/range end:/d;" /etc/warewulf/warewulf.conf
         sed -i "s/mount: false/mount: true/" /etc/warewulf/warewulf.conf
         sed -i "s/mntops: defaults,noauto,nofail/mntops: defaults,nofail/" /etc/warewulf/nodes.conf
+        sed -i "/- quiet/d" /etc/warewulf/nodes.conf
 
         ## Warewulf
         wwctl configure --all
