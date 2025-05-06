@@ -246,10 +246,14 @@ if torch.cuda.is_available():
 
 ```bash
 dnf config-manager --set-enabled crb
-dnf build-dep -y ./warewulf.spec
+dnf install -y rpm-build
 
+cd /usr/src/warewulf
 make spec
+make dist
+install -dpv ~/rpmbuild/SOURCES/
 install -Dv ./warewulf-*.tar.gz ~/rpmbuild/SOURCES/
+dnf build-dep -y ./warewulf.spec
 
 \rm -rf ~/rpmbuild/RPMS
 rpmbuild -bb ./warewulf.spec
@@ -257,22 +261,51 @@ rpmbuild -bb ./warewulf.spec
 
 ## Diskless w/ Dracut
 
+From release
 ```bash
 image=$(wwctl profile list nodes --json | jq -r '.nodes."image name"')
 chroot=$(wwctl image show $image)
 wwctl profile set --yes nodes --tagadd IPXEMenuEntry=dracut
 
 wwctl image exec $image --build=false -- /usr/bin/mkdir -v /boot
-wwctl image exec $image --build=false -- /usr/bin/dnf -y install https://github.com/warewulf/warewulf/releases/download/v4.6.1/warewulf-dracut-4.6.1-1.el9.noarch.rpm
+wwctl image exec $image --build=false -- /usr/bin/dnf -y install ignition https://github.com/warewulf/warewulf/releases/download/v4.6.1/warewulf-dracut-4.6.1-1.el9.noarch.rpm
 wwctl image exec $image -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
 ```
 
 From local build
 ```bash
+image=$(wwctl profile list nodes --json | jq -r '.nodes."image name"')
+chroot=$(wwctl image show $image)
+wwctl profile set --yes nodes --tagadd IPXEMenuEntry=dracut
+
 install -v ~/rpmbuild/RPMS/noarch/warewulf-dracut-*.noarch.rpm ${chroot}/tmp/warewulf-dracut.rpm
-wwctl image exec $image --build=false -- /usr/bin/dnf install -y /tmp/warewulf-dracut.rpm
+wwctl image exec $image --build=false -- /usr/bin/dnf install -y ignition /tmp/warewulf-dracut.rpm
 wwctl image exec $image -- /usr/bin/dracut --force --no-hostonly --add wwinit --regenerate-all
 ```
+
+Disk Image
+```bash
+wwctl node set --yes c1 \
+  --diskname /dev/vda \
+  --partcreate --fswipe \
+  --partname rootfs --partcreate --partnumber 2 \
+  --fsname rootfs --fsformat ext4 --fspath /rootfs
+wwctl node set --yes c1 --root persistent
+```
+
+Debugging: `curl` some data
+```bash
+mac=$(wwctl node list --json | jq -r '.c1."network devices".default.hwaddr')
+curl -4 localhost:9873/ipxe/${mac}
+curl -4 localhost:9873/overlay-file/debug/tstruct.md.ww?render=c1
+curl -4s localhost:9873/overlay-file/persistent/ignition.json.ww?render=c1 | jq
+```
+
+Debug Notes
+* Patch for missing file in spec
+* Documentation missing for ignition file.
+* Commandline must have `root=persistent wwinit.id={{id}} wwinit.ignition=http://{{.Ipaddr}}:{{.Port}}/overlay-file/persistent`
+* rd.shell
 
 ## Delete
 
