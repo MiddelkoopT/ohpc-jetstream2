@@ -45,8 +45,8 @@ done
 echo ${c_mac[@]}
 
 ## Setup OpenHPC Repo
-# Local: Enable development repo (3.3)
-#dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
+# Local: Enable development repo (3.4)
+#dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.4:/Factory/EL_9/
 
 # 3.1 Enable OpenHPC repository (not in recipe.sh)
 dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/x86_64/ohpc-release-3-1.el9.x86_64.rpm

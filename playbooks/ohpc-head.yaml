@@ -45,12 +45,12 @@
         name: http://repos.openhpc.community/OpenHPC/3/EL_9/{{ arch }}/ohpc-release-3-1.el9.{{ arch }}.rpm
         disable_gpg_check: true
 
-    - name: Add OpenHPC Release Factory (3.3)
+    - name: Add OpenHPC Release Factory (3.4)
       ansible.builtin.yum_repository:
         name: openhpc-factory
-        description: OpenHPC 3.2 Factory Repository
-        baseurl: http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
-        enabled: true
+        description: OpenHPC Factory Repository
+        baseurl: http://obs.openhpc.community:82/OpenHPC3:/3.4:/Factory/EL_9/
+        enabled: "{{ ohpc_factory | bool }}"
         gpgcheck: false
 
     - name: Install OHPC base
@@ -175,7 +175,9 @@
 
         passwd -d root # allow serial console login
 
-        dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.3:/Factory/EL_9/
+        {% if ohpc_factory | default(false) %}
+        dnf config-manager --add-repo http://obs.openhpc.community:82/OpenHPC3:/3.4:/Factory/EL_9/
+        {% endif %}
         dnf install -y http://repos.openhpc.community/OpenHPC/3/EL_9/${arch}/ohpc-release-3-1.el9.${arch}.rpm
 
         dnf install -y ohpc-base-compute hwloc-ohpc
