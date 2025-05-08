@@ -203,7 +203,7 @@ sudo dnf install -y git
 git clone https://github.com/openhpc/ohpc.git source/ohpc
 cd source/ohpc
 
-./tests/ci/prepare-ci-environment.sh
+sudo ./tests/ci/prepare-ci-environment.sh
 sudo ./tests/ci/run_build.py $USER ./components/admin/docs/SPECS/docs.spec
 sudo ./tests/ci/run_build.py $USER ./components/provisioning/warewulf/SPECS/warewulf.spec
 ```
